@@ -47,6 +47,18 @@ export default function Home() {
       image: '/images/categories/food.jpg',
       color: 'from-orange-500 to-red-500',
     },
+    {
+      id: 'books',
+      name: 'books',
+      image: '/images/categories/stationery.jpg',
+      color: 'from-blue-500 to-indigo-500',
+    },
+    {
+      id: 'electronics',
+      name: ' electronics',
+      image: '/images/categories/food.jpg',
+      color: 'from-orange-500 to-red-500',
+    },
     // Add more categories if needed...
   ];
 
@@ -54,7 +66,7 @@ export default function Home() {
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const shopsQuery = query(collection(db, 'products'));
+        const shopsQuery = query(collection(db, 'shops'));
         const snapshot = await getDocs(shopsQuery);
         const fetchedShops = snapshot.docs.map((doc) => ({
           id: doc.id,
@@ -128,7 +140,7 @@ export default function Home() {
           ))}
         </div>
       </div>
-
+      
       {/* Filters and Sort */}
       <div className="sticky top-16 bg-white shadow-sm z-10">
         <div className="max-w-7xl mx-auto px-4 py-3">
@@ -178,9 +190,10 @@ export default function Home() {
           </div>
         </div>
       </div>
-
+      
       {/* Shops Grid */}
       <div className="max-w-7xl mx-auto px-4 py-8">
+      <h2 className="text-2xl font-bold mb-6">Discover the shops on the campus</h2>
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />

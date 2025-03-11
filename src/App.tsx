@@ -16,7 +16,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import ShopDashboard from './pages/shop/Dashboard';
 import { CartProvider } from './contexts/CartContext';
 import Cart from './pages/Cart';
-import Checkout from './pages/Checkout'; // Import the Checkout component
+import Checkout from './pages/Checkout'; 
 import { Toaster } from 'react-hot-toast';
 import FoodPage from './pages/FoodPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -27,7 +27,7 @@ import Products from './pages/shop/Products';
 import Layout from './components/Layout';
 //import Orders from './pages/Orders';
 import Orders from './pages/Orders/index';
-
+import Tracking from './pages/tracking'; // Adjust the path as needed
 // Protected Route Component
 function ProtectedRoute({ 
   children, 
@@ -148,6 +148,7 @@ function App() {
                   } />
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/orders" element={<StudentRoute><Orders /></StudentRoute>} />
+                  <Route path="/tracking" element={<Tracking />} />
                 </Routes>
               </Layout>
               <Toaster />
