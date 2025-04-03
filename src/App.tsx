@@ -5,6 +5,11 @@ import LaunchScreen from './pages/LaunchScreen';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
+import MyProfile from './pages/MyProfile';
+import DeliveryAddress from './pages/DeliveryAddress';
+import ContactUs from './pages/ContactUs';
+import HelpAndFAQs from './pages/HelpAndFAQs';
+import Settings from './pages/Settings';
 import Navbar from './components/Navbar';
 import CategoryPage from './pages/CategoryPage';
 import ProductPage from './pages/ProductPage';
@@ -16,7 +21,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import ShopDashboard from './pages/shop/Dashboard';
 import { CartProvider } from './contexts/CartContext';
 import Cart from './pages/Cart';
-import Checkout from './pages/Checkout'; // Import the Checkout component
+import Checkout from './pages/Checkout'; 
 import { Toaster } from 'react-hot-toast';
 import FoodPage from './pages/FoodPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -25,9 +30,9 @@ import ShopkeeperRoute from './components/ShopkeeperRoute';
 import AdminRoute from './components/AdminRoute';
 import Products from './pages/shop/Products';
 import Layout from './components/Layout';
-//import Orders from './pages/Orders';
 import Orders from './pages/Orders/index';
-
+import Tracking from './pages/Tracking';
+import MyOrders from './pages/MyOrders';
 // Protected Route Component
 function ProtectedRoute({ 
   children, 
@@ -105,6 +110,19 @@ function App() {
                       <FoodPage />
                     </ProtectedRoute>
                   } />
+                  <Route path="/my-orders" element={
+                    <StudentRoute>
+                      <MyOrders />
+                    </StudentRoute>
+                  } />
+
+                  {/* Profile Routes */}
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/my-profile" element={<MyProfile />} />
+                  <Route path="/delivery-address" element={<DeliveryAddress />} />
+                  <Route path="/contact" element={<ContactUs />} />
+                  <Route path="/help-faqs" element={<HelpAndFAQs />} />
+                  <Route path="/settings" element={<Settings />} />
 
                   {/* Admin Routes */}
                   <Route path="/admin/*" element={
@@ -140,7 +158,6 @@ function App() {
                     </ProtectedRoute>
                   } />
 
-                  <Route path="/profile" element={<Profile />} />
                   <Route path="/stationery" element={
                     <ProtectedRoute allowedRoles={['student']}>
                       <StationeryPage />
@@ -148,6 +165,7 @@ function App() {
                   } />
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/orders" element={<StudentRoute><Orders /></StudentRoute>} />
+                  <Route path="/tracking" element={<Tracking />} />
                 </Routes>
               </Layout>
               <Toaster />
