@@ -7,21 +7,21 @@ export default function DeliveryAddress() {
   const [addresses, setAddresses] = useState([
     {
       id: 1,
-      name: 'Home',
-      address: '123, Main Street, City Center',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      pincode: '400001',
+      name: 'Hostel 1',
+      address: 'Room 123',
+      city: 'Jaipur',
+      state: 'Rajasthan',
+      pincode: '300042',
       phone: '+91 9876543210',
       isDefault: true
     },
     {
       id: 2,
-      name: 'Office',
-      address: '456, Business Park, Tech Zone',
-      city: 'Bangalore',
-      state: 'Karnataka',
-      pincode: '560001',
+      name: 'Hostel 2',
+      address: 'Room 420',
+      city: 'Jaipur',
+      state: 'Rajasthan',
+      pincode: '300042',
       phone: '+91 9876543211',
       isDefault: false
     }

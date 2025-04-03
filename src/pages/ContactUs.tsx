@@ -43,7 +43,7 @@ export default function ContactUs() {
               <MapPin className="w-5 h-5 text-[#FF5733]" />
               <div>
                 <p className="text-gray-600">Address</p>
-                <p className="font-medium">123, Business Park, Tech Zone, Bangalore - 560001</p>
+                <p className="font-medium">Automation Building, Banasthali Vidyapith, Rajasthan, India</p>
               </div>
             </div>
           </div>
@@ -107,15 +107,15 @@ export default function ContactUs() {
           <h2 className="text-lg font-semibold mb-4">Business Hours</h2>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-gray-600">Monday - Friday</span>
+              <span className="text-gray-600">Sunday - Monday</span>
               <span className="font-medium">9:00 AM - 8:00 PM</span>
             </div>
-            <div className="flex justify-between">
+            {/* <div className="flex justify-between">
               <span className="text-gray-600">Saturday</span>
               <span className="font-medium">10:00 AM - 6:00 PM</span>
-            </div>
+            </div> */}
             <div className="flex justify-between">
-              <span className="text-gray-600">Sunday</span>
+              <span className="text-gray-600">Tuesday</span>
               <span className="font-medium">Closed</span>
             </div>
           </div>
