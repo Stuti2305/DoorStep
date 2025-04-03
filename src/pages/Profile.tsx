@@ -19,13 +19,13 @@ export default function Profile() {
   const { signOut } = useAuth();
 
   const menuItems = [
-    { icon: <ShoppingBag className="w-6 h-6" />, label: 'My Orders' },
-    { icon: <User className="w-6 h-6" />, label: 'My Profile' },
-    { icon: <MapPin className="w-6 h-6" />, label: 'Delivery Address' },
-    { icon: <CreditCard className="w-6 h-6" />, label: 'Payment Methods' },
-    { icon: <Phone className="w-6 h-6" />, label: 'Contact Us' },
-    { icon: <HelpCircle className="w-6 h-6" />, label: 'Help & FAQs' },
-    { icon: <Settings className="w-6 h-6" />, label: 'Settings' },
+    { icon: <ShoppingBag className="w-6 h-6" />, label: 'My Orders', path: '/my-orders' },
+    { icon: <User className="w-6 h-6" />, label: 'My Profile', path: '/my-profile' },
+    { icon: <MapPin className="w-6 h-6" />, label: 'Delivery Address', path: '/delivery-address' },
+    { icon: <CreditCard className="w-6 h-6" />, label: 'Payment Methods', path: '/payment' },
+    { icon: <Phone className="w-6 h-6" />, label: 'Contact Us', path: '/contact' },
+    { icon: <HelpCircle className="w-6 h-6" />, label: 'Help & FAQs', path: '/help-faqs' },
+    { icon: <Settings className="w-6 h-6" />, label: 'Settings', path: '/settings' },
   ];
 
   const handleLogout = async () => {
@@ -60,6 +60,7 @@ export default function Profile() {
           {menuItems.map((item, index) => (
             <button
               key={index}
+              onClick={() => navigate(item.path)}
               className="flex items-center gap-4 w-full text-white"
             >
               {item.icon}
