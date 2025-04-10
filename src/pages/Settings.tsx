@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Home as HomeIcon, Heart, Bell, Moon, Sun, Bell as BellIcon, Lock, Shield, Globe, HelpCircle } from 'lucide-react';
+import { Home as HomeIcon, Heart, Bell, Moon, Sun, Bell as BellIcon, Lock, Shield, Globe, HelpCircle, ChevronRight } from 'lucide-react';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -21,40 +21,40 @@ export default function Settings() {
 
   const settingsOptions = [
     {
-      icon: <Moon className="w-5 h-5" />,
-      title: 'Dark Mode',
+      icon: darkMode ? <Moon className="w-6 h-6" /> : <Sun className="w-6 h-6" />,
+      title: 'Theme',
       description: 'Switch between light and dark theme',
       action: () => setDarkMode(!darkMode),
-      value: darkMode ? 'On' : 'Off'
+      value: darkMode ? 'Dark' : 'Light'
     },
     {
-      icon: <BellIcon className="w-5 h-5" />,
+      icon: <BellIcon className="w-6 h-6" />,
       title: 'Notifications',
       description: 'Manage your notification preferences',
       action: () => setNotifications(!notifications),
-      value: notifications ? 'On' : 'Off'
+      value: notifications ? 'Enabled' : 'Disabled'
     },
     {
-      icon: <Globe className="w-5 h-5" />,
+      icon: <Globe className="w-6 h-6" />,
       title: 'Language',
       description: 'Change app language',
       action: () => setLanguage(language === 'English' ? 'Hindi' : 'English'),
       value: language
     },
     {
-      icon: <Lock className="w-5 h-5" />,
+      icon: <Lock className="w-6 h-6" />,
       title: 'Privacy & Security',
       description: 'Manage your privacy settings',
       action: () => navigate('/privacy')
     },
     {
-      icon: <Shield className="w-5 h-5" />,
+      icon: <Shield className="w-6 h-6" />,
       title: 'Account Security',
       description: 'Change password and security settings',
       action: () => navigate('/security')
     },
     {
-      icon: <HelpCircle className="w-5 h-5" />,
+      icon: <HelpCircle className="w-6 h-6" />,
       title: 'Help & Support',
       description: 'Get help with your account',
       action: () => navigate('/help')
@@ -62,31 +62,39 @@ export default function Settings() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">Settings</h1>
+    <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
+      <div className="max-w-xl mx-auto p-6 pb-24">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Settings</h1>
+          <p className={`text-lg ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Manage your account preferences</p>
+        </div>
 
         {/* Settings Options */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           {settingsOptions.map((option, index) => (
             <div
               key={index}
-              className="bg-white p-4 rounded-lg shadow-sm"
+              className={`p-5 rounded-xl shadow-sm flex items-center justify-between transition-all 
+                ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`}
               onClick={option.action}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-[#FF5733]">
-                    {option.icon}
-                  </div>
-                  <div>
-                    <h3 className="font-medium">{option.title}</h3>
-                    <p className="text-sm text-gray-600">{option.description}</p>
-                  </div>
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-orange-100'}`}>
+                  {option.icon}
                 </div>
+                <div>
+                  <h3 className="font-semibold text-lg">{option.title}</h3>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{option.description}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
                 {option.value && (
-                  <span className="text-gray-600">{option.value}</span>
+                  <span className={`font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    {option.value}
+                  </span>
                 )}
+                <ChevronRight className={`w-5 h-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
               </div>
             </div>
           ))}
@@ -95,29 +103,43 @@ export default function Settings() {
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="w-full mt-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600"
+          className={`w-full mt-8 py-4 rounded-xl font-semibold text-lg
+            ${darkMode ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'} text-white`}
         >
           Log Out
         </button>
 
         {/* App Version */}
-        <div className="mt-8 text-center text-gray-500">
+        <div className={`mt-10 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           <p>App Version 1.0.0</p>
         </div>
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#FF5733] border-t border-[#FFD66B] flex justify-around py-4">
-        <button onClick={() => navigate('/home')} className="text-white">
-          <HomeIcon className="w-6 h-6" />
+      <div className={`fixed bottom-0 left-0 right-0 ${darkMode ? 'bg-gray-800' : 'bg-white'} 
+        border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-around py-4`}>
+        <button 
+          onClick={() => navigate('/home')} 
+          className={`flex flex-col items-center ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}
+        >
+          <HomeIcon className="w-7 h-7" />
+          <span className="text-sm mt-1">Home</span>
         </button>
-        <button onClick={() => navigate('/favorites')} className="text-white">
-          <Heart className="w-6 h-6" />
+        <button 
+          onClick={() => navigate('/favorites')} 
+          className={`flex flex-col items-center ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}
+        >
+          <Heart className="w-7 h-7" />
+          <span className="text-sm mt-1">Favorites</span>
         </button>
-        <button onClick={() => navigate('/profile')} className="text-white">
-          <Bell className="w-6 h-6" />
+        <button 
+          onClick={() => navigate('/profile')} 
+          className="flex flex-col items-center text-orange-500"
+        >
+          <Bell className="w-7 h-7" />
+          <span className="text-sm mt-1">Profile</span>
         </button>
       </div>
     </div>
   );
-} 
+}

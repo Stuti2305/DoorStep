@@ -4,86 +4,95 @@ import { Home as HomeIcon, Heart, Bell } from 'lucide-react';
 
 export default function MyProfile() {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser } = useAuth(); 
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20">
       {/* Profile Header */}
       <div className="bg-[#FF5733] p-6 text-white">
         <div className="flex items-center gap-4 mb-6">
           <div className="w-20 h-20 bg-white rounded-full overflow-hidden">
             <img
-              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330"
+              src={currentUser?.photoURL || "https://images.unsplash.com/photo-1494790108377-be9c29b29330"}
               alt="Profile"
               className="w-full h-full object-cover"
             />
           </div>
           <div>
-            <h2 className="text-2xl font-bold">{currentUser?.displayName || 'User'}</h2>
-            <p className="text-sm opacity-80">{currentUser?.email}</p>
+            <h2 className="text-2xl font-bold">{currentUser?.displayName || 'Ginny Miller'}</h2>
+            <p className="text-sm opacity-80">{currentUser?.email || 'ginny234@gmail.com'}</p>
           </div>
         </div>
       </div>
 
       {/* Profile Details */}
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 max-w-2xl mx-auto">
         {/* Personal Information */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold mb-4">Personal Information</h3>
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h3 className="text-xl font-semibold mb-4">Personal Information</h3>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Name</span>
-              <span className="font-medium">{currentUser?.displayName || 'Not set'}</span>
+              <span className="text-gray-600 text-lg">Name</span>
+              <span className="font-medium text-lg">{currentUser?.displayName || 'Ginny Miller'}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Email</span>
-              <span className="font-medium">{currentUser?.email}</span>
+              <span className="text-gray-600 text-lg">Email</span>
+              <span className="font-medium text-lg">{currentUser?.email || 'ginny234@gmail.com'}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Phone</span>
-              <span className="font-medium">+91 9876543210</span>
+              <span className="text-gray-600 text-lg">Phone</span>
+              <span className="font-medium text-lg">{currentUser?.phoneNumber || '+91 8789890989'}</span>
             </div>
           </div>
         </div>
 
         {/* Recent Orders */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold mb-4">Recent Orders</h3>
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h3 className="text-xl font-semibold mb-4">Recent Orders</h3>
           <div className="space-y-4">
             <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
               <div>
-                <p className="font-medium">Order #12345</p>
-                <p className="text-sm text-gray-600">2 items • ₹999</p>
+                <p className="font-medium text-lg">Order #12345</p>
+                <p className="text-gray-600">2 items • ₹999</p>
               </div>
-              <span className="text-green-600">Delivered</span>
+              <span className="text-green-600 font-medium">Delivered</span>
             </div>
             <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
               <div>
-                <p className="font-medium">Order #12346</p>
-                <p className="text-sm text-gray-600">1 item • ₹499</p>
+                <p className="font-medium text-lg">Order #12346</p>
+                <p className="text-gray-600">1 item • ₹499</p>
               </div>
-              <span className="text-yellow-600">Processing</span>
+              <span className="text-yellow-600 font-medium">Processing</span>
             </div>
           </div>
           <button 
             onClick={() => navigate('/my-orders')}
-            className="mt-4 w-full py-2 text-[#FF5733] border border-[#FF5733] rounded-lg hover:bg-[#FF5733] hover:text-white transition-colors"
+            className="mt-6 w-full py-3 text-[#FF5733] border-2 border-[#FF5733] rounded-xl hover:bg-[#FF5733] hover:text-white transition-colors text-lg font-medium"
           >
             View All Orders
           </button>
         </div>
 
         {/* Account Settings */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold mb-4">Account Settings</h3>
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h3 className="text-xl font-semibold mb-4">Account Settings</h3>
           <div className="space-y-4">
-            <button className="w-full text-left py-2 text-gray-600 hover:text-[#FF5733]">
+            <button 
+              onClick={() => navigate('/change-password')}
+              className="w-full text-left py-3 text-gray-600 hover:text-[#FF5733] text-lg"
+            >
               Change Password
             </button>
-            <button className="w-full text-left py-2 text-gray-600 hover:text-[#FF5733]">
+            <button 
+              onClick={() => navigate('/update-profile')}
+              className="w-full text-left py-3 text-gray-600 hover:text-[#FF5733] text-lg"
+            >
               Update Profile Picture
             </button>
-            <button className="w-full text-left py-2 text-gray-600 hover:text-[#FF5733]">
+            <button 
+              onClick={() => navigate('/notifications')}
+              className="w-full text-left py-3 text-gray-600 hover:text-[#FF5733] text-lg"
+            >
               Manage Notifications
             </button>
           </div>
@@ -92,16 +101,28 @@ export default function MyProfile() {
 
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#FF5733] border-t border-[#FFD66B] flex justify-around py-4">
-        <button onClick={() => navigate('/home')} className="text-white">
-          <HomeIcon className="w-6 h-6" />
+        <button 
+          onClick={() => navigate('/home')} 
+          className="flex flex-col items-center text-white"
+        >
+          <HomeIcon className="w-7 h-7" />
+          <span className="text-sm mt-1">Home</span>
         </button>
-        <button onClick={() => navigate('/favorites')} className="text-white">
-          <Heart className="w-6 h-6" />
+        <button 
+          onClick={() => navigate('/favorites')} 
+          className="flex flex-col items-center text-white"
+        >
+          <Heart className="w-7 h-7" />
+          <span className="text-sm mt-1">Favorites</span>
         </button>
-        <button onClick={() => navigate('/profile')} className="text-white">
-          <Bell className="w-6 h-6" />
+        <button 
+          onClick={() => navigate('/profile')} 
+          className="flex flex-col items-center text-white"
+        >
+          <Bell className="w-7 h-7" />
+          <span className="text-sm mt-1">Profile</span>
         </button>
       </div>
     </div>
   );
-} 
+}

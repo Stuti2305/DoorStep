@@ -38,56 +38,77 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FF5733]">
-      {/* Profile Header */}
-      <div className="p-6 text-white">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 bg-white rounded-full overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-orange-500 to-orange-600 pb-28">
+      {/* Container for centered content */}
+      <div className="max-w-lg mx-auto px-6">
+        {/* Profile Header */}
+        <div className="pt-12 pb-8 flex flex-col items-center">
+          <div className="w-32 h-32 bg-white rounded-full overflow-hidden border-4 border-white shadow-xl mb-6">
             <img
-              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330"
+              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330" 
               alt="Profile"
               className="w-full h-full object-cover"
             />
           </div>
-          <div>
-            <h2 className="text-xl font-semibold">Manya</h2>
-            <p className="text-sm opacity-80">manya@email.com</p>
+          <h2 className="text-3xl font-bold text-white">Ginny Miller</h2>
+          <p className="text-base text-white/90">ginny234@email.com</p>
+        </div>
+
+        {/* Menu Items Card */}
+        <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-10">
+          <div className="divide-y divide-gray-100">
+            {menuItems.map((item, index) => (
+              <button
+                key={index}
+                onClick={() => navigate(item.path)}
+                className="flex items-center gap-5 w-full p-5 text-gray-700 hover:bg-orange-50 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-500">
+                  {item.icon}
+                </div>
+                <span className="font-medium text-lg">{item.label}</span>
+                <div className="ml-auto text-gray-400">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Menu Items */}
-        <div className="space-y-4">
-          {menuItems.map((item, index) => (
-            <button
-              key={index}
-              onClick={() => navigate(item.path)}
-              className="flex items-center gap-4 w-full text-white"
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          ))}
-          
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-4 w-full text-white"
-          >
-            <LogOut className="w-6 h-6" />
-            <span>Log Out</span>
-          </button>
-        </div>
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="flex items-center justify-center gap-3 w-full bg-white p-5 rounded-2xl shadow-lg text-red-500 font-medium hover:bg-red-50 transition-colors text-lg"
+        >
+          <LogOut className="w-6 h-6" />
+          <span>Log Out</span>
+        </button>
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#FF5733] border-t border-[#FFD66B] flex justify-around py-4">
-        <button onClick={() => navigate('/home')} className="text-white">
-          <HomeIcon className="w-6 h-6" />
+      <div className="fixed bottom-0 left-0 right-0 bg-white shadow-xl rounded-t-3xl flex justify-around py-5 border-t border-gray-200">
+        <button 
+          onClick={() => navigate('/home')} 
+          className="flex flex-col items-center text-gray-500 hover:text-orange-500"
+        >
+          <HomeIcon className="w-7 h-7" />
+          <span className="text-sm mt-1.5">Home</span>
         </button>
-        <button onClick={() => navigate('/favorites')} className="text-white">
-          <Heart className="w-6 h-6" />
+        <button 
+          onClick={() => navigate('/favorites')} 
+          className="flex flex-col items-center text-gray-500 hover:text-orange-500"
+        >
+          <Heart className="w-7 h-7" />
+          <span className="text-sm mt-1.5">Favorites</span>
         </button>
-        <button onClick={() => navigate('/profile')} className="text-white">
-          <Bell className="w-6 h-6" />
+        <button 
+          onClick={() => navigate('/profile')} 
+          className="flex flex-col items-center text-orange-500"
+        >
+          <User className="w-7 h-7" />
+          <span className="text-sm mt-1.5">Profile</span>
         </button>
       </div>
     </div>

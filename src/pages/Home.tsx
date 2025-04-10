@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Search, ChevronDown, Star, Clock, Filter, MapPin, X } from 'lucide-react';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { useDebounce } from '../hooks/useDebounce';
 
 interface Category {
   id: string;
@@ -32,6 +33,8 @@ export default function Home() {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [shops, setShops] = useState<Shop[]>([]);
+  const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Sample categories data
   const categories: Category[] = [
@@ -43,7 +46,7 @@ export default function Home() {
     },
     {
       id: 'food',
-      name: 'Food',
+      name: 'food',
       image: '/images/categories/food.jpg',
       color: 'from-orange-500 to-red-500',
     },
@@ -58,6 +61,12 @@ export default function Home() {
       name: ' electronics',
       image: '/images/categories/food.jpg',
       color: 'from-orange-500 to-red-500',
+    },
+    {
+      id: 'Daily Essentials',
+      name: 'Daily Essentials',
+      image: '/images/categories/food.jpg',
+      color: 'from-blue-500 to-indigo-500',
     },
     // Add more categories if needed...
   ];
@@ -83,6 +92,22 @@ export default function Home() {
     fetchShops();
   }, []);
 
+  // Update the search effect to use debounced value
+  useEffect(() => {
+    if (!debouncedSearchQuery.trim()) {
+      setFilteredShops(shops);
+      return;
+    }
+
+    const query = debouncedSearchQuery.toLowerCase().trim();
+    const filtered = shops.filter(shop => 
+      (shop.name?.toLowerCase().includes(query) || '') ||
+      (shop.cuisine?.toLowerCase().includes(query) || '') ||
+      (shop.offers?.some(offer => offer?.toLowerCase().includes(query)) || false)
+    );
+    setFilteredShops(filtered);
+  }, [debouncedSearchQuery, shops]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section with Search */}
@@ -104,7 +129,7 @@ export default function Home() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search for shops, items or categories"
+              placeholder="Search for shops on the campus"
               className="w-full pl-12 pr-4 py-3 rounded-full bg-white text-gray-800 
                          focus:outline-none focus:ring-2 focus:ring-white/50 transition-shadow"
             />
@@ -198,9 +223,9 @@ export default function Home() {
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
           </div>
-        ) : (
+        ) : filteredShops.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {shops.map((shop) => (
+            {filteredShops.map((shop) => (
               <Link key={shop.id} to={`/shop/${shop.id}`}>
                 <motion.div
                   whileHover={{ y: -5 }}
@@ -251,6 +276,13 @@ export default function Home() {
                 </motion.div>
               </Link>
             ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-64">
+            <div className="text-gray-500 text-lg mb-2">No shops found</div>
+            <div className="text-gray-400">
+              Try adjusting your search or filters
+            </div>
           </div>
         )}
       </div>

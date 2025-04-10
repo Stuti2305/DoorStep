@@ -10,7 +10,7 @@ export default function LaunchScreen() {
     const timer = setTimeout(() => {
       navigate('/auth?mode=signin');
     }, 3000);
-
+    
     return () => clearTimeout(timer);
   }, [navigate]);
 
@@ -69,10 +69,10 @@ export default function LaunchScreen() {
             transition={{ delay: 0.5 }}
             className="text-center"
           >
-            <h1 className="text-5xl font-bold text-white mb-4">BANASTHALI</h1>
-            <h2 className="text-4xl font-bold text-white/90 mb-6">UNIVERSITY</h2>
+            <h1 className="text-5xl font-bold text-white mb-8">DOORSTEP</h1>
+            <h2 className="text-4xl font-bold text-white/90 mb-6">BANASTHALI UNIVERSITY</h2>
             <h3 className="text-3xl font-bold text-white/80">DELIVERY</h3>
-            <h4 className="text-3xl font-bold text-white/80">APP</h4>
+            <h4 className="text-3xl font-bold text-white/80">APPLICATION</h4>
           </motion.div>
 
           {/* Animated features */}

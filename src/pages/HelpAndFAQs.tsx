@@ -1,10 +1,23 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home as HomeIcon, Heart, Bell, ChevronDown, ChevronUp } from 'lucide-react';
+import { 
+  Home as HomeIcon, 
+  Heart, 
+  User, 
+  ChevronDown, 
+  ChevronUp, 
+  Search, 
+  ShoppingBag, 
+  CreditCard, 
+  UserCircle, 
+  Package, 
+  MessageCircle 
+} from 'lucide-react';
 
 export default function HelpAndFAQs() {
   const navigate = useNavigate();
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const faqs = [
     {
@@ -41,91 +54,141 @@ export default function HelpAndFAQs() {
     }
   ];
 
+  const categories = [
+    { name: "Orders & Delivery", icon: <ShoppingBag className="w-5 h-5" /> },
+    { name: "Payments & Refunds", icon: <CreditCard className="w-5 h-5" /> },
+    { name: "Account & Profile", icon: <UserCircle className="w-5 h-5" /> },
+    { name: "Products & Services", icon: <Package className="w-5 h-5" /> }
+  ];
+
   const toggleFaq = (index: number) => {
     setExpandedFaq(expandedFaq === index ? null : index);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">Help & FAQs</h1>
-
-        {/* Search Bar */}
-        <div className="mb-6">
-          <input
-            type="text"
-            placeholder="Search for help..."
-            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF5733]"
-          />
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white pb-20">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-b-3xl shadow-lg mb-6">
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-2xl font-bold mb-2">Help Center</h1>
+          <p className="text-orange-100 text-sm">Find answers to your questions</p>
         </div>
-
-        {/* FAQ Categories */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <button className="p-4 bg-white rounded-lg shadow-sm text-center">
-            <p className="font-medium">Orders & Delivery</p>
-          </button>
-          <button className="p-4 bg-white rounded-lg shadow-sm text-center">
-            <p className="font-medium">Payments & Refunds</p>
-          </button>
-          <button className="p-4 bg-white rounded-lg shadow-sm text-center">
-            <p className="font-medium">Account & Profile</p>
-          </button>
-          <button className="p-4 bg-white rounded-lg shadow-sm text-center">
-            <p className="font-medium">Products & Services</p>
-          </button>
-        </div>
-
-        {/* FAQ List */}
-        <div className="space-y-4">
-          {faqs.map((faq, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <button
-                className="w-full p-4 flex justify-between items-center"
-                onClick={() => toggleFaq(index)}
-              >
-                <span className="text-left font-medium">{faq.question}</span>
-                {expandedFaq === index ? (
-                  <ChevronUp className="w-5 h-5 text-gray-500" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-500" />
-                )}
-              </button>
-              {expandedFaq === index && (
-                <div className="p-4 pt-0 text-gray-600">
-                  {faq.answer}
-                </div>
-              )}
+      </div>
+      
+      <div className="container mx-auto px-4 max-w-5xl">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left Column - Search and Categories */}
+          <div className="lg:w-1/2">
+            {/* Search Bar */}
+            <div className="mb-6 relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <Search className="w-5 h-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search for help..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
+              />
             </div>
-          ))}
-        </div>
 
-        {/* Still Need Help Section */}
-        <div className="mt-8 bg-white p-6 rounded-lg shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Still Need Help?</h2>
-          <p className="text-gray-600 mb-4">
-            If you couldn't find the answer to your question, our customer support team is here to help you.
-          </p>
-          <button
-            onClick={() => navigate('/contact')}
-            className="w-full py-2 bg-[#FF5733] text-white rounded-lg hover:bg-[#FF5733]/90"
-          >
-            Contact Support
-          </button>
+            {/* FAQ Categories */}
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              {categories.map((category, index) => (
+                <button key={index} className="flex flex-col items-center p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-orange-50 transition-colors">
+                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 mb-2">
+                    {category.icon}
+                  </div>
+                  <p className="font-medium text-sm text-gray-700">{category.name}</p>
+                </button>
+              ))}
+            </div>
+
+            {/* Still Need Help Section */}
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 rounded-xl shadow-md text-white">
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-orange-500 mr-3">
+                  <MessageCircle className="w-5 h-5" />
+                </div>
+                <h2 className="text-lg font-semibold">Still Need Help?</h2>
+              </div>
+              <p className="text-orange-50 mb-4">
+                If you couldn't find the answer to your question, our customer support team is here to help you.
+              </p>
+              <button
+                onClick={() => navigate('/contact')}
+                className="w-full py-3 bg-white text-orange-500 font-medium rounded-lg hover:bg-orange-50 transition-colors"
+              >
+                Contact Support
+              </button>
+            </div>
+          </div>
+
+          {/* Right Column - Most Common Questions */}
+          <div className="lg:w-1/2">
+            <div className="sticky top-4">
+              <h2 className="text-lg font-semibold mb-4 text-gray-800">Most Common Questions</h2>
+              <div className="space-y-3">
+                {faqs.map((faq, index) => (
+                  <div 
+                    key={index} 
+                    className={`bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 transition-all ${
+                      expandedFaq === index ? 'ring-2 ring-orange-300' : ''
+                    }`}
+                  >
+                    <button
+                      className="w-full p-4 flex justify-between items-center text-left"
+                      onClick={() => toggleFaq(index)}
+                    >
+                      <span className="font-medium text-gray-800">{faq.question}</span>
+                      <div className={`flex-shrink-0 w-6 h-6 rounded-full ${
+                        expandedFaq === index ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-500'
+                      } flex items-center justify-center transition-colors`}>
+                        {expandedFaq === index ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
+                      </div>
+                    </button>
+                    {expandedFaq === index && (
+                      <div className="p-4 pt-0 text-gray-600 border-t border-gray-100 bg-orange-50/50">
+                        {faq.answer}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#FF5733] border-t border-[#FFD66B] flex justify-around py-4">
-        <button onClick={() => navigate('/home')} className="text-white">
+      <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-100 flex justify-around py-3">
+        <button 
+          onClick={() => navigate('/home')} 
+          className="flex flex-col items-center text-gray-500 hover:text-orange-500"
+        >
           <HomeIcon className="w-6 h-6" />
+          <span className="text-xs mt-1">Home</span>
         </button>
-        <button onClick={() => navigate('/favorites')} className="text-white">
+        <button 
+          onClick={() => navigate('/favorites')} 
+          className="flex flex-col items-center text-gray-500 hover:text-orange-500"
+        >
           <Heart className="w-6 h-6" />
+          <span className="text-xs mt-1">Favorites</span>
         </button>
-        <button onClick={() => navigate('/profile')} className="text-white">
-          <Bell className="w-6 h-6" />
+        <button 
+          onClick={() => navigate('/profile')} 
+          className="flex flex-col items-center text-gray-500 hover:text-orange-500"
+        >
+          <User className="w-6 h-6" />
+          <span className="text-xs mt-1">Profile</span>
         </button>
       </div>
     </div>
   );
-} 
+}

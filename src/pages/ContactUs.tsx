@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home as HomeIcon, Heart, Bell, Mail, Phone, MapPin } from 'lucide-react';
+import { 
+  Home as HomeIcon, 
+  Heart, 
+  User, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Clock, 
+  Send,
+  MessageSquare
+} from 'lucide-react';
 
 export default function ContactUs() {
   const navigate = useNavigate();
@@ -13,127 +23,182 @@ export default function ContactUs() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission here
     console.log('Form submitted:', formData);
+    alert('Message sent successfully!');
+    // Clear form fields after submission
+    setFormData({
+      name: '',
+      email: '',
+      subject: '',
+      message: ''
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">Contact Us</h1>
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white pb-20">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-b-3xl shadow-lg mb-6">
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-2xl font-bold mb-2">Contact Us</h1>
+          <p className="text-orange-100 text-sm">We'd love to hear from you</p>
+        </div>
+      </div>
+      
+      <div className="container mx-auto px-4 max-w-5xl">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left Column - Contact Info and Business Hours */}
+          <div className="lg:w-1/2">
+            {/* Contact Cards */}
+            <div className="grid grid-cols-1 gap-4 mb-8">
+              <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center">
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 mr-4">
+                  <Phone className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-gray-500 text-sm">Phone</p>
+                  <p className="font-medium text-gray-800">+91 9876543210</p>
+                </div>
+              </div>
+              
+              <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center">
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 mr-4">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-gray-500 text-sm">Email</p>
+                  <p className="font-medium text-gray-800">support@doorstep.com</p>
+                </div>
+              </div>
+              
+              <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center">
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 mr-4">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-gray-500 text-sm">Address</p>
+                  <p className="font-medium text-gray-800">Automation Building, Banasthali Vidyapith, Rajasthan, India</p>
+                </div>
+              </div>
+            </div>
 
-        {/* Contact Information */}
-        <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Phone className="w-5 h-5 text-[#FF5733]" />
-              <div>
-                <p className="text-gray-600">Phone</p>
-                <p className="font-medium">+91 9876543210</p>
+            {/* Business Hours */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 mr-3">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-800">Business Hours</h2>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-[#FF5733]" />
-              <div>
-                <p className="text-gray-600">Email</p>
-                <p className="font-medium">support@doorstep.com</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <MapPin className="w-5 h-5 text-[#FF5733]" />
-              <div>
-                <p className="text-gray-600">Address</p>
-                <p className="font-medium">Automation Building, Banasthali Vidyapith, Rajasthan, India</p>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+                  <span className="text-gray-700">Sunday - Monday</span>
+                  <span className="font-medium text-orange-600">9:00 AM - 8:00 PM</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-700">Tuesday</span>
+                  <span className="font-medium text-gray-500">Closed</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Contact Form */}
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Send us a Message</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-gray-600 mb-1">Name</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded-lg"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-gray-600 mb-1">Email</label>
-              <input
-                type="email"
-                className="w-full p-2 border rounded-lg"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-gray-600 mb-1">Subject</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded-lg"
-                value={formData.subject}
-                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-gray-600 mb-1">Message</label>
-              <textarea
-                className="w-full p-2 border rounded-lg"
-                rows={4}
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full py-2 bg-[#FF5733] text-white rounded-lg hover:bg-[#FF5733]/90"
-            >
-              Send Message
-            </button>
-          </form>
-        </div>
-
-        {/* Business Hours */}
-        <div className="bg-white p-6 rounded-lg shadow-sm mt-6">
-          <h2 className="text-lg font-semibold mb-4">Business Hours</h2>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Sunday - Monday</span>
-              <span className="font-medium">9:00 AM - 8:00 PM</span>
-            </div>
-            {/* <div className="flex justify-between">
-              <span className="text-gray-600">Saturday</span>
-              <span className="font-medium">10:00 AM - 6:00 PM</span>
-            </div> */}
-            <div className="flex justify-between">
-              <span className="text-gray-600">Tuesday</span>
-              <span className="font-medium">Closed</span>
+          {/* Right Column - Contact Form */}
+          <div className="lg:w-1/2">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 sticky top-4">
+              <div className="flex items-center mb-6">
+                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 mr-3">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-800">Send us a Message</h2>
+              </div>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-gray-600 text-sm mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Enter your name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-gray-600 text-sm mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-gray-600 text-sm mb-1">Subject</label>
+                  <input
+                    type="text"
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="What is this regarding?"
+                    value={formData.subject}
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-gray-600 text-sm mb-1">Message</label>
+                  <textarea
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    rows={4}
+                    placeholder="Your message here..."
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    required
+                  />
+                </div>
+                
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+                >
+                  <Send className="w-4 h-4" />
+                  Send Message
+                </button>
+              </form>
             </div>
           </div>
         </div>
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#FF5733] border-t border-[#FFD66B] flex justify-around py-4">
-        <button onClick={() => navigate('/home')} className="text-white">
+      <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-100 flex justify-around py-3">
+        <button 
+          onClick={() => navigate('/home')} 
+          className="flex flex-col items-center text-gray-500 hover:text-orange-500"
+        >
           <HomeIcon className="w-6 h-6" />
+          <span className="text-xs mt-1">Home</span>
         </button>
-        <button onClick={() => navigate('/favorites')} className="text-white">
+        <button 
+          onClick={() => navigate('/favorites')} 
+          className="flex flex-col items-center text-gray-500 hover:text-orange-500"
+        >
           <Heart className="w-6 h-6" />
+          <span className="text-xs mt-1">Favorites</span>
         </button>
-        <button onClick={() => navigate('/profile')} className="text-white">
-          <Bell className="w-6 h-6" />
+        <button 
+          onClick={() => navigate('/profile')} 
+          className="flex flex-col items-center text-gray-500 hover:text-orange-500"
+        >
+          <User className="w-6 h-6" />
+          <span className="text-xs mt-1">Profile</span>
         </button>
       </div>
     </div>
   );
-} 
+}
