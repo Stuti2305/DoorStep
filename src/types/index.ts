@@ -71,4 +71,7 @@ export interface Shop {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  address?: string;
+  phone?: string;
+  email?: string;
 }

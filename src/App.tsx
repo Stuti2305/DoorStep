@@ -33,6 +33,12 @@ import Layout from './components/Layout';
 import Orders from './pages/Orders/index';
 import Tracking from './pages/Tracking';
 import MyOrders from './pages/MyOrders';
+import AddProduct from './pages/shop/AddProduct';
+import AddCategory from './pages/shop/AddCategory';
+import Categories from './pages/shop/Categories';
+import EditProduct from './pages/shop/EditProduct';
+import EditCategory from './pages/shop/EditCategory';
+import ShopProfile from './pages/shop/Profile';
 // Protected Route Component
 function ProtectedRoute({ 
   children, 
@@ -153,7 +159,36 @@ function App() {
                             <Products />
                           </ShopkeeperRoute>
                         } />
-                        {/* Add more shop routes */}
+                        <Route path="add-product" element={
+                          <ShopkeeperRoute>
+                            <AddProduct />
+                          </ShopkeeperRoute>
+                        } />
+                        <Route path="edit-product/:id" element={
+                          <ShopkeeperRoute>
+                            <EditProduct />
+                          </ShopkeeperRoute>
+                        } />
+                        <Route path="categories" element={
+                          <ShopkeeperRoute>
+                            <Categories />
+                          </ShopkeeperRoute>
+                        } />
+                        <Route path="add-category" element={
+                          <ShopkeeperRoute>
+                            <AddCategory />
+                          </ShopkeeperRoute>
+                        } />
+                        <Route path="edit-category/:id" element={
+                          <ShopkeeperRoute>
+                            <EditCategory />
+                          </ShopkeeperRoute>
+                        } />
+                        <Route path="profile" element={
+                          <ShopkeeperRoute>
+                            <ShopProfile />
+                          </ShopkeeperRoute>
+                        } />
                       </Routes>
                     </ProtectedRoute>
                   } />

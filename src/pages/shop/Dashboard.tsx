@@ -5,7 +5,8 @@ import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { 
   Store, Package, Clock, TrendingUp, Users, 
-  DollarSign, Bell, Settings, Truck 
+  DollarSign, Bell, Settings, Truck, Menu, User,
+  ChevronDown, X
 } from 'lucide-react';
 import type { Shop, Order, Product } from '../../types';
 
@@ -29,6 +30,8 @@ export default function ShopDashboard() {
   const [shop, setShop] = useState<Shop | null>(null);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalRevenue: 0,
@@ -114,6 +117,15 @@ export default function ShopDashboard() {
     fetchShopData();
   }, [user]);
 
+  const menuItems = [
+    { title: 'Add Product', path: '/shop/add-product' },
+    { title: 'Add Category', path: '/shop/add-category' },
+    { title: 'View Products', path: '/shop/products' },
+    { title: 'View Categories', path: '/shop/categories' },
+    { title: 'Edit Product', path: '/shop/edit-product' },
+    { title: 'Edit Category', path: '/shop/edit-category' },
+  ];
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -125,22 +137,68 @@ export default function ShopDashboard() {
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{shop?.name}</h1>
-            <p className="text-gray-600">Shop Dashboard</p>
-          </div>
-          <div className="flex gap-4">
-            <Link
-              to="/shop/settings"
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-full relative"
             >
-              <Settings className="w-6 h-6" />
-            </Link>
+              {showMenu ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{shop?.name}</h1>
+              <p className="text-gray-600">Shop Dashboard</p>
+            </div>
+          </div>
+          <div className="flex gap-4 items-center">
             <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full">
               <Bell className="w-6 h-6" />
             </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                <User className="w-6 h-6" />
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+                  <Link
+                    to="/shop/profile"
+                    className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  >
+                    View Profile
+                  </Link>
+                  <Link
+                    to="/shop/settings"
+                    className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  >
+                    Settings
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Menu Dropdown */}
+        {showMenu && (
+          <div className="bg-white rounded-lg shadow-lg mb-8 overflow-hidden">
+            {menuItems.map((item, index) => (
+              <Link
+                key={index}
+                to={item.path}
+                className="block px-4 py-3 text-gray-700 hover:bg-gray-50 border-b last:border-b-0"
+              >
+                {item.title}
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
