@@ -115,31 +115,7 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <div className={`fixed bottom-0 left-0 right-0 ${darkMode ? 'bg-gray-800' : 'bg-white'} 
-        border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-around py-4`}>
-        <button 
-          onClick={() => navigate('/home')} 
-          className={`flex flex-col items-center ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}
-        >
-          <HomeIcon className="w-7 h-7" />
-          <span className="text-sm mt-1">Home</span>
-        </button>
-        <button 
-          onClick={() => navigate('/favorites')} 
-          className={`flex flex-col items-center ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}
-        >
-          <Heart className="w-7 h-7" />
-          <span className="text-sm mt-1">Favorites</span>
-        </button>
-        <button 
-          onClick={() => navigate('/profile')} 
-          className="flex flex-col items-center text-orange-500"
-        >
-          <Bell className="w-7 h-7" />
-          <span className="text-sm mt-1">Profile</span>
-        </button>
-      </div>
+      
     </div>
   );
 }

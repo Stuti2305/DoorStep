@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setCurrentUser(null);
       }
       setLoading(false);
-    }); //error is here
+    }); 
 
     return unsubscribe;
   }, []);

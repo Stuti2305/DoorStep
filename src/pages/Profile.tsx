@@ -22,7 +22,7 @@ export default function Profile() {
     { icon: <ShoppingBag className="w-6 h-6" />, label: 'My Orders', path: '/my-orders' },
     { icon: <User className="w-6 h-6" />, label: 'My Profile', path: '/my-profile' },
     { icon: <MapPin className="w-6 h-6" />, label: 'Delivery Address', path: '/delivery-address' },
-    { icon: <CreditCard className="w-6 h-6" />, label: 'Payment Methods', path: '/payment' },
+    
     { icon: <Phone className="w-6 h-6" />, label: 'Contact Us', path: '/contact' },
     { icon: <HelpCircle className="w-6 h-6" />, label: 'Help & FAQs', path: '/help-faqs' },
     { icon: <Settings className="w-6 h-6" />, label: 'Settings', path: '/settings' },
@@ -87,30 +87,8 @@ export default function Profile() {
         </button>
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white shadow-xl rounded-t-3xl flex justify-around py-5 border-t border-gray-200">
-        <button 
-          onClick={() => navigate('/home')} 
-          className="flex flex-col items-center text-gray-500 hover:text-orange-500"
-        >
-          <HomeIcon className="w-7 h-7" />
-          <span className="text-sm mt-1.5">Home</span>
-        </button>
-        <button 
-          onClick={() => navigate('/favorites')} 
-          className="flex flex-col items-center text-gray-500 hover:text-orange-500"
-        >
-          <Heart className="w-7 h-7" />
-          <span className="text-sm mt-1.5">Favorites</span>
-        </button>
-        <button 
-          onClick={() => navigate('/profile')} 
-          className="flex flex-col items-center text-orange-500"
-        >
-          <User className="w-7 h-7" />
-          <span className="text-sm mt-1.5">Profile</span>
-        </button>
-      </div>
+     
+
     </div>
   );
 }

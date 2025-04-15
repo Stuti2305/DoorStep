@@ -44,7 +44,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       <Link to={`/product/${product.id}`}>
         <div className="relative">
           <img
-            src={product.imageUrl}
+            src={`data:image/jpeg;base64,${product.imageUrl}`}
             alt={product.name}
             className="w-full h-48 object-cover"
           />

@@ -99,30 +99,7 @@ export default function MyProfile() {
         </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#FF5733] border-t border-[#FFD66B] flex justify-around py-4">
-        <button 
-          onClick={() => navigate('/home')} 
-          className="flex flex-col items-center text-white"
-        >
-          <HomeIcon className="w-7 h-7" />
-          <span className="text-sm mt-1">Home</span>
-        </button>
-        <button 
-          onClick={() => navigate('/favorites')} 
-          className="flex flex-col items-center text-white"
-        >
-          <Heart className="w-7 h-7" />
-          <span className="text-sm mt-1">Favorites</span>
-        </button>
-        <button 
-          onClick={() => navigate('/profile')} 
-          className="flex flex-col items-center text-white"
-        >
-          <Bell className="w-7 h-7" />
-          <span className="text-sm mt-1">Profile</span>
-        </button>
-      </div>
+      
     </div>
   );
 }

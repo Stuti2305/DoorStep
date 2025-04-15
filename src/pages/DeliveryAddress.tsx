@@ -199,18 +199,7 @@ export default function DeliveryAddress() {
         </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#FF5733] border-t border-[#FFD66B] flex justify-around py-4">
-        <button onClick={() => navigate('/home')} className="text-white">
-          <HomeIcon className="w-6 h-6" />
-        </button>
-        <button onClick={() => navigate('/favorites')} className="text-white">
-          <Heart className="w-6 h-6" />
-        </button>
-        <button onClick={() => navigate('/profile')} className="text-white">
-          <Bell className="w-6 h-6" />
-        </button>
-      </div>
+      
     </div>
   );
 } 

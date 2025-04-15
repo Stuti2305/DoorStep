@@ -14,22 +14,25 @@ export default function CategoryPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       if (!category) return;
-      
+
       try {
         const q = query(
           collection(db, 'products'),
           where('category', '==', category),
           where('available', '==', true)
         );
-        
+
         const snapshot = await getDocs(q);
-        const fetchedProducts = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate(),
-          updatedAt: doc.data().updatedAt?.toDate(),
-        })) as Product[];
-        
+        const fetchedProducts = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate?.() || null,
+            updatedAt: data.updatedAt?.toDate?.() || null,
+          };
+        }) as Product[];
+
         setProducts(fetchedProducts);
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -74,4 +77,4 @@ export default function CategoryPage() {
       </div>
     </div>
   );
-} 
+}

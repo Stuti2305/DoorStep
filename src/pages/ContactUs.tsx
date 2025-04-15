@@ -175,30 +175,7 @@ export default function ContactUs() {
         </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-100 flex justify-around py-3">
-        <button 
-          onClick={() => navigate('/home')} 
-          className="flex flex-col items-center text-gray-500 hover:text-orange-500"
-        >
-          <HomeIcon className="w-6 h-6" />
-          <span className="text-xs mt-1">Home</span>
-        </button>
-        <button 
-          onClick={() => navigate('/favorites')} 
-          className="flex flex-col items-center text-gray-500 hover:text-orange-500"
-        >
-          <Heart className="w-6 h-6" />
-          <span className="text-xs mt-1">Favorites</span>
-        </button>
-        <button 
-          onClick={() => navigate('/profile')} 
-          className="flex flex-col items-center text-gray-500 hover:text-orange-500"
-        >
-          <User className="w-6 h-6" />
-          <span className="text-xs mt-1">Profile</span>
-        </button>
-      </div>
+      
     </div>
   );
 }

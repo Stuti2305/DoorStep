@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Search, ChevronDown, Star, Clock, Filter, MapPin, X } from 'lucide-react';
+import { Search, ChevronDown, Star, Clock, Filter, MapPin } from 'lucide-react';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useDebounce } from '../hooks/useDebounce';
@@ -30,13 +30,11 @@ export default function Home() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSort, setSelectedSort] = useState('recommended');
   const [location, setLocation] = useState('Banasthali Campus');
-  const [showLocationModal, setShowLocationModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [shops, setShops] = useState<Shop[]>([]);
   const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Sample categories data
   const categories: Category[] = [
     {
       id: 'stationery',
@@ -46,32 +44,30 @@ export default function Home() {
     },
     {
       id: 'food',
-      name: 'food',
+      name: 'Food',
       image: '/images/categories/food.jpg',
       color: 'from-orange-500 to-red-500',
     },
     {
       id: 'books',
-      name: 'books',
-      image: '/images/categories/stationery.jpg',
-      color: 'from-blue-500 to-indigo-500',
+      name: 'Books',
+      image: '/images/categories/books.jpg',
+      color: 'from-green-500 to-teal-500',
     },
     {
       id: 'electronics',
-      name: ' electronics',
-      image: '/images/categories/food.jpg',
-      color: 'from-orange-500 to-red-500',
+      name: 'Electronics',
+      image: '/images/categories/electronics.jpg',
+      color: 'from-purple-500 to-pink-500',
     },
     {
-      id: 'Daily Essentials',
+      id: 'daily-essentials',
       name: 'Daily Essentials',
-      image: '/images/categories/food.jpg',
-      color: 'from-blue-500 to-indigo-500',
+      image: '/images/categories/essentials.jpg',
+      color: 'from-yellow-500 to-orange-500',
     },
-    // Add more categories if needed...
   ];
 
-  // Fetch shops from Firebase Firestore
   useEffect(() => {
     const fetchShops = async () => {
       try {
@@ -82,6 +78,7 @@ export default function Home() {
           ...doc.data(),
         })) as Shop[];
         setShops(fetchedShops);
+        setFilteredShops(fetchedShops);
       } catch (error) {
         console.error('Error fetching shops:', error);
       } finally {
@@ -92,7 +89,6 @@ export default function Home() {
     fetchShops();
   }, []);
 
-  // Update the search effect to use debounced value
   useEffect(() => {
     if (!debouncedSearchQuery.trim()) {
       setFilteredShops(shops);
@@ -100,24 +96,20 @@ export default function Home() {
     }
 
     const query = debouncedSearchQuery.toLowerCase().trim();
-    const filtered = shops.filter(shop => 
-      (shop.name?.toLowerCase().includes(query) || '') ||
-      (shop.cuisine?.toLowerCase().includes(query) || '') ||
-      (shop.offers?.some(offer => offer?.toLowerCase().includes(query)) || false)
+    const filtered = shops.filter((shop) =>
+      shop.name.toLowerCase().includes(query) ||
+      shop.cuisine.toLowerCase().includes(query) ||
+      shop.offers.some((offer) => offer.toLowerCase().includes(query))
     );
     setFilteredShops(filtered);
   }, [debouncedSearchQuery, shops]);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section with Search */}
       <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-6">
-            <button
-              onClick={() => setShowLocationModal(true)}
-              className="flex items-center space-x-2 hover:bg-white/10 rounded-lg px-3 py-2 transition-colors"
-            >
+            <button className="flex items-center space-x-2 hover:bg-white/10 rounded-lg px-3 py-2 transition-colors">
               <MapPin className="w-5 h-5" />
               <span className="font-medium">{location}</span>
               <ChevronDown className="w-4 h-4" />
@@ -130,72 +122,68 @@ export default function Home() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search for shops on the campus"
-              className="w-full pl-12 pr-4 py-3 rounded-full bg-white text-gray-800 
-                         focus:outline-none focus:ring-2 focus:ring-white/50 transition-shadow"
+              className="w-full pl-12 pr-4 py-3 rounded-full bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-white/50 transition-shadow"
             />
           </div>
         </div>
       </div>
 
-      {/* Categories Section */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h2 className="text-2xl font-bold mb-6">What's on your mind?</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {categories.map((category) => (
+          {/* {categories.map((category) => (
             <Link key={category.id} to={`/category/${category.id}`}>
-              <motion.div
-                whileHover={{ y: -5 }}
-                className="relative rounded-2xl overflow-hidden aspect-square shadow-lg"
-              >
-                <div
-                  className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-80`}
-                />
+              <motion.div whileHover={{ y: -5 }} className="relative rounded-2xl overflow-hidden aspect-square shadow-lg">
+                <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-80`} />
                 <img
                   src={category.image}
                   alt={category.name}
                   className="absolute inset-0 w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-white font-semibold text-lg">
-                    {category.name}
-                  </span>
+                  <span className="text-white font-semibold text-lg">{category.name}</span>
                 </div>
               </motion.div>
             </Link>
-          ))}
+          ))} */}
+          {categories.map((category) => (
+  <Link key={category.id} to={`/category/${category.id}`}>
+    <motion.div whileHover={{ y: -5 }} className="relative rounded-2xl overflow-hidden aspect-square shadow-lg">
+      <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-80`} />
+      <img
+        src={`data:image/jpeg;base64,${category.image}`} //chngd
+        alt={category.name}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-white font-semibold text-lg">{category.name}</span>
+      </div>
+    </motion.div>
+  </Link>
+))}
         </div>
       </div>
-      
-      {/* Filters and Sort */}
+
       <div className="sticky top-16 bg-white shadow-sm z-10">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center space-x-2 px-4 py-2 rounded-full border 
-                           hover:bg-gray-50 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 rounded-full border hover:bg-gray-50 transition-colors"
               >
                 <Filter className="w-4 h-4" />
                 <span>Filters</span>
               </button>
               <button
                 onClick={() => setSelectedSort('rating')}
-                className={`px-4 py-2 rounded-full border transition-colors ${
-                  selectedSort === 'rating'
-                    ? 'bg-gray-900 text-white'
-                    : 'hover:bg-gray-50'
-                }`}
+                className={`px-4 py-2 rounded-full border transition-colors ${selectedSort === 'rating' ? 'bg-gray-900 text-white' : 'hover:bg-gray-50'}`}
               >
                 Rating 4.0+
               </button>
               <button
                 onClick={() => setSelectedSort('fastest')}
-                className={`px-4 py-2 rounded-full border transition-colors ${
-                  selectedSort === 'fastest'
-                    ? 'bg-gray-900 text-white'
-                    : 'hover:bg-gray-50'
-                }`}
+                className={`px-4 py-2 rounded-full border transition-colors ${selectedSort === 'fastest' ? 'bg-gray-900 text-white' : 'hover:bg-gray-50'}`}
               >
                 Fastest Delivery
               </button>
@@ -203,8 +191,7 @@ export default function Home() {
             <select
               value={selectedSort}
               onChange={(e) => setSelectedSort(e.target.value)}
-              className="px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 
-                         focus:ring-purple-500"
+              className="px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="recommended">Recommended</option>
               <option value="rating">Rating</option>
@@ -215,10 +202,9 @@ export default function Home() {
           </div>
         </div>
       </div>
-      
-      {/* Shops Grid */}
+
       <div className="max-w-7xl mx-auto px-4 py-8">
-      <h2 className="text-2xl font-bold mb-6">Discover the shops on the campus</h2>
+        <h2 className="text-2xl font-bold mb-6">Discover the shops on the campus</h2>
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
@@ -227,30 +213,19 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredShops.map((shop) => (
               <Link key={shop.id} to={`/shop/${shop.id}`}>
-                <motion.div
-                  whileHover={{ y: -5 }}
-                  className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl 
-                             transition-shadow"
-                >
+                <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                   <div className="relative">
-                    <img
-                      src={shop.image}
-                      alt={shop.name}
-                      className="w-full h-48 object-cover"
-                    />
+                    <img src={`data:image/jpeg;base64,${shop.image}`} alt={shop.name} className="w-full h-48 object-cover" />
+                    
                     {shop.promoted && (
-                      <div className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 
-                                      to-blue-700 text-white px-3 py-1 rounded-full text-sm">
+                      <div className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 py-1 rounded-full text-sm">
                         Promoted
                       </div>
                     )}
                     {shop.offers && shop.offers.length > 0 && (
-                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t 
-                                      from-black/60 to-transparent p-4">
-                        <div className="flex items-center space-x-2">
-                          <div className="text-white text-sm font-medium">
-                            {shop.offers[0]}
-                          </div>
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                        <div className="text-white text-sm font-medium">
+                          {shop.offers[0]}
                         </div>
                       </div>
                     )}
@@ -258,8 +233,7 @@ export default function Home() {
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-lg font-semibold">{shop.name}</h3>
-                      <div className="flex items-center space-x-1 bg-green-500 text-white 
-                                      px-2 py-1 rounded">
+                      <div className="flex items-center space-x-1 bg-green-500 text-white px-2 py-1 rounded">
                         <span>{shop.rating}</span>
                         <Star className="w-4 h-4 fill-current" />
                       </div>
@@ -280,42 +254,9 @@ export default function Home() {
         ) : (
           <div className="flex flex-col items-center justify-center h-64">
             <div className="text-gray-500 text-lg mb-2">No shops found</div>
-            <div className="text-gray-400">
-              Try adjusting your search or filters
-            </div>
           </div>
         )}
       </div>
-
-      {/* Location Modal */}
-      <AnimatePresence>
-        {showLocationModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
-              className="bg-white rounded-2xl p-6 w-full max-w-md"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Select Location</h2>
-                <button
-                  onClick={() => setShowLocationModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              {/* Add location selection UI here */}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
