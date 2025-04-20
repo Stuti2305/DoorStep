@@ -41,6 +41,7 @@ import EditCategory from './pages/shop/EditCategory';
 import ShopProfile from './pages/shop/Profile';
 import CreateShop from './pages/shop/createShop';
 import ShopPage from './pages/shopPage';
+import DeliveryDashboard from './pages/delivery/Dashboard';
 // Protected Route Component
 function ProtectedRoute({
   children,
@@ -207,6 +208,7 @@ function App() {
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/orders" element={<StudentRoute><Orders /></StudentRoute>} />
                   <Route path="/tracking" element={<Tracking />} />
+                  <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
                 </Routes>
               </Layout>
               <Toaster />
