@@ -128,8 +128,7 @@ export default function Home() {
     const query = debouncedSearchQuery.toLowerCase().trim();
     const filtered = shops.filter((shop) =>
       shop.name.toLowerCase().includes(query) ||
-      shop.cuisine.toLowerCase().includes(query) ||
-      shop.offers.some((offer) => offer.toLowerCase().includes(query))
+      shop.description.toLowerCase().includes(query) 
     );
     setFilteredShops(filtered);
   }, [debouncedSearchQuery, shops]);
@@ -245,7 +244,7 @@ export default function Home() {
               <Link key={shop.id} to={`/shops/${shop.id}`}>
                 <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                   <div className="relative">
-                    <img src={`data:image/jpeg;base64,${shop.imageUrl}`} alt={shop.name} className="w-full h-48 object-cover" />
+                    <img src={shop.image} alt={shop.name} className="w-full h-48 object-cover" />
 
                     {shop.promoted && (
                       <div className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 py-1 rounded-full text-sm">
