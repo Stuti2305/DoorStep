@@ -28,7 +28,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import StudentRoute from './components/StudentRoute';
 import ShopkeeperRoute from './components/ShopkeeperRoute';
 import AdminRoute from './components/AdminRoute';
-import DeliveryRoute from './components/DeliveryRoute';
 import Products from './pages/shop/Products';
 import Layout from './components/Layout';
 import Orders from './pages/Orders/index';
@@ -42,8 +41,6 @@ import EditCategory from './pages/shop/EditCategory';
 import ShopProfile from './pages/shop/Profile';
 import CreateShop from './pages/shop/createShop';
 import ShopPage from './pages/shopPage';
-import DeliveryDashboard from './pages/delivery/Dashboard';
-
 // Protected Route Component
 function ProtectedRoute({
   children,
@@ -95,8 +92,10 @@ function App() {
                     </StudentRoute>
                   } />
 
+                  {/* Public Routes */}
+                  <Route path="/category/:category" element={<CategoryPage />} />
+                  
                   {/* Student Routes */}
-                  <Route path="/category/:categoryId" element={<CategoryPage />} />
                   <Route path="/product/:id" element={
                     <StudentRoute>
                       <ProductPage />
@@ -125,36 +124,12 @@ function App() {
                   } />
 
                   {/* Profile Routes */}
-                  <Route path="/profile" element={
-                    <ProtectedRoute allowedRoles={['student', 'shopkeeper', 'admin', 'delivery']}>
-                      <Profile />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/my-profile" element={
-                    <ProtectedRoute allowedRoles={['student', 'shopkeeper', 'admin', 'delivery']}>
-                      <MyProfile />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/delivery-address" element={
-                    <ProtectedRoute allowedRoles={['student']}>
-                      <DeliveryAddress />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/contact" element={
-                    <ProtectedRoute allowedRoles={['student', 'shopkeeper', 'admin', 'delivery']}>
-                      <ContactUs />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/help-faqs" element={
-                    <ProtectedRoute allowedRoles={['student', 'shopkeeper', 'admin', 'delivery']}>
-                      <HelpAndFAQs />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/settings" element={
-                    <ProtectedRoute allowedRoles={['student', 'shopkeeper', 'admin', 'delivery']}>
-                      <Settings />
-                    </ProtectedRoute>
-                  } />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/my-profile" element={<MyProfile />} />
+                  <Route path="/delivery-address" element={<DeliveryAddress />} />
+                  <Route path="/contact" element={<ContactUs />} />
+                  <Route path="/help-faqs" element={<HelpAndFAQs />} />
+                  <Route path="/settings" element={<Settings />} />
 
                   {/* Admin Routes */}
                   <Route path="/admin/*" element={
@@ -232,18 +207,6 @@ function App() {
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/orders" element={<StudentRoute><Orders /></StudentRoute>} />
                   <Route path="/tracking" element={<Tracking />} />
-
-                  {/* Delivery Partner Routes */}
-                  <Route
-                    path="/delivery/*"
-                    element={
-                      <DeliveryRoute>
-                        <Routes>
-                          <Route path="dashboard" element={<DeliveryDashboard />} />
-                        </Routes>
-                      </DeliveryRoute>
-                    }
-                  />
                 </Routes>
               </Layout>
               <Toaster />

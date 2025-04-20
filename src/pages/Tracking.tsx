@@ -1,50 +1,85 @@
 import { Link } from 'react-router-dom';
-import { MapPin } from 'lucide-react';
+import { MapPin, CheckCircle, Clock, Circle } from 'lucide-react';
 
 export default function Tracking() {
+  const address = 'Hostel Aagar, Room 20';
+
   return (
-    <div className="min-h-screen bg-yellow-100 py-12 px-6 sm:px-8 lg:px-12 flex items-center justify-center">
-      <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-10 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">TRACKING THE ORDER</h1>
+    <div className="min-h-screen bg-yellow-50 py-12 px-4 sm:px-8 lg:px-12 flex items-center justify-center">
+      <div className="max-w-3xl w-full bg-white rounded-3xl shadow-xl p-8 sm:p-12">
+        <h1 className="text-3xl font-extrabold text-gray-900 mb-8 text-center tracking-tight">
+          Track Your Order
+        </h1>
 
         {/* Address Section */}
-        <div className="mb-6 text-left">
-          <h3 className="text-lg font-bold">Address</h3>
-          <div className="bg-yellow-200 p-3 rounded-lg flex items-center gap-2">
-            <MapPin className="text-orange-600" />
-            <p>Hostel Aagar, Room 20</p>
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold mb-2">Delivery Address</h3>
+          <div className="bg-yellow-200 p-4 rounded-xl flex items-center gap-3">
+            <MapPin className="text-orange-600 w-5 h-5" />
+            <span className="text-gray-800 font-medium">{address}</span>
           </div>
         </div>
 
-        {/* Map Placeholder */}
-        <div className="mb-6 w-full h-48 bg-gray-300 rounded-lg flex items-center justify-center text-gray-700">
-          <p>Map Component Placeholder</p>
+        {/* Icon-Based Map Placeholder */}
+        <div className="mb-8 w-full h-48 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-700 gap-2">
+          <MapPin className="w-10 h-10 text-orange-500" />
+          <p className="font-semibold text-gray-800">Tracking your delivery route...</p>
+          <div className="flex items-center gap-1 text-sm text-gray-600">
+            <span className="animate-pulse">📍</span>
+            <span>Hostel Aagar</span>
+            <span className="mx-1">→</span>
+            <span>Delivery Location</span>
+            <span className="animate-bounce">🏁</span>
+          </div>
         </div>
 
-        {/* Delivery Time Section */}
-        <div className="mb-6 text-left">
-          <h3 className="text-lg font-bold">Delivery Time</h3>
-          <p className="text-orange-600 font-bold text-xl">25 mins</p>
+        {/* Delivery Time */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold mb-1">Estimated Time of Arrival</h3>
+          <div className="flex items-center gap-2 text-orange-600 text-2xl font-bold">
+            <Clock className="w-6 h-6" />
+            25 mins
+          </div>
         </div>
 
-        {/* Delivery Status */}
-        <div className="text-left">
-          <p className="mb-2 text-gray-700">Estimated Delivery</p>
-          <ul className="text-gray-600 space-y-2">
-            <li>✔ Your order has been accepted <span className="float-right">2 min</span></li>
-            <li>✔ The restaurant is preparing your order <span className="float-right">5 min</span></li>
-            <li>✔ The delivery is on his way <span className="float-right">10 min</span></li>
-            <li>✔ Your order has been delivered <span className="float-right">8 min</span></li>
-          </ul>
+        {/* Order Status Timeline */}
+        <div className="mb-10">
+          <h3 className="text-xl font-semibold mb-4">Delivery Status</h3>
+          <div className="space-y-5 border-l-4 border-orange-300 pl-6">
+            <div className="relative">
+              <CheckCircle className="absolute -left-7 top-1 text-green-600 w-5 h-5" />
+              <p className="text-gray-800">
+                Order Accepted <span className="text-sm text-gray-500 float-right">2 min</span>
+              </p>
+            </div>
+            <div className="relative">
+              <CheckCircle className="absolute -left-7 top-1 text-green-600 w-5 h-5" />
+              <p className="text-gray-800">
+                Preparing Order <span className="text-sm text-gray-500 float-right">5 min</span>
+              </p>
+            </div>
+            <div className="relative">
+              <Circle className="absolute -left-7 top-1 text-gray-400 w-5 h-5" />
+              <p className="text-gray-800">
+                On the Way <span className="text-sm text-gray-500 float-right">10 min</span>
+              </p>
+            </div>
+            <div className="relative">
+              <Circle className="absolute -left-7 top-1 text-gray-400 w-5 h-5" />
+              <p className="text-gray-800">
+                Delivered <span className="text-sm text-gray-500 float-right">8 min</span>
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Return Home Button */}
-        <div className="mt-6">
+        <div className="text-center">
           <Link
             to="/home"
-            className="w-full py-3 bg-orange-500 text-white rounded-full text-lg font-semibold hover:bg-orange-600 transition-colors block text-center"
+            className="inline-block w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-8 rounded-full transition-colors duration-300"
           >
-            Return Home
+            Return to Home
           </Link>
         </div>
       </div>

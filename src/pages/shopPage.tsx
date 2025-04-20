@@ -1,26 +1,22 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { useNavigate } from 'react-router-dom';
+import { db, storage } from '../lib/firebase';
 import { Product, Shop } from '../types/types';
 import { ChevronLeft, Star, MapPin, Clock } from 'lucide-react';
-import { getDownloadURL, ref } from "firebase/storage";
-import { storage } from "../lib/firebase";
-import { listAll } from "firebase/storage";
-import { useCart } from '../contexts/CartContext'; // Adjust path if needed
+import { getDownloadURL, ref, listAll } from "firebase/storage";
+import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-
 
 export default function ShopPage() {
     const { shopId } = useParams<{ shopId: string }>();
     const [products, setProducts] = useState<Product[]>([]);
     const [shop, setShop] = useState<Shop | null>(null);
     const [loading, setLoading] = useState(true);
+    const [message, setMessage] = useState<string | null>(null);
     const { addToCart } = useCart();
     const { user } = useAuth();
-
-const navigate = useNavigate();
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchShopAndProducts = async () => {
@@ -50,16 +46,15 @@ const navigate = useNavigate();
                             const listResult = await listAll(folderRef);
 
                             if (listResult.items.length > 0) {
-                                const imageRef = listResult.items[0]; // get first image
+                                const imageRef = listResult.items[0];
                                 const imageUrl = await getDownloadURL(imageRef);
                                 productData.imageUrl = imageUrl;
                             } else {
-                                console.warn("No images found for product:", productData.id);
                                 productData.imageUrl = "";
                             }
                         } catch (err) {
                             console.warn("Error fetching image for:", productData.id, err);
-                            productData.imageUrl = ""; // fallback
+                            productData.imageUrl = "";
                         }
 
                         productList.push(productData);
@@ -76,17 +71,26 @@ const navigate = useNavigate();
 
         fetchShopAndProducts();
     }, [shopId]);
+
     useEffect(() => {
         if (user && user.role === 'shopkeeper' && user.shopId === shopId) {
             navigate('/shop/dashboard');
         }
     }, [user, shopId, navigate]);
+
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 relative">
+            {/* Global popup message */}
+            {message && (
+                <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-green-600 text-white text-lg font-semibold px-6 py-3 rounded-xl shadow-lg">
+                    {message}
+                </div>
+            )}
+
             {/* Shop Header */}
             <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
                 <div className="max-w-7xl mx-auto px-4 py-8">
-                    <Link to="/" className="inline-flex items-center space-x-2 text-white hover:text-white/80 mb-4">
+                    <Link to="/home" className="inline-flex items-center space-x-2 text-white hover:text-white/80 mb-4">
                         <ChevronLeft className="w-5 h-5" />
                         <span>Back to Home</span>
                     </Link>
@@ -95,7 +99,7 @@ const navigate = useNavigate();
                         <div className="flex flex-col md:flex-row md:items-center gap-6 mt-4">
                             <div className="w-24 h-24 rounded-xl overflow-hidden">
                                 <img
-                                    src={shop.imageUrl}
+                                    src={shop.imageUrl} 
                                     alt={shop.name}
                                     className="w-full h-full object-cover"
                                 />
@@ -110,11 +114,11 @@ const navigate = useNavigate();
                                         </div>
                                     )}
                                 </div>
-                                <div className="text-white/80 mt-1">{shop.cuisine}</div>
+                                <div className="text-white/80 mt-1">Price for Two: {shop.priceForTwo}</div>
                                 <div className="flex items-center space-x-4 mt-2">
                                     <div className="flex items-center space-x-1">
                                         <MapPin className="w-4 h-4" />
-                                        <span>{shop.location}</span>
+                                        <span>{shop.description}</span>
                                     </div>
                                     {shop.deliveryTime && (
                                         <div className="flex items-center space-x-1">
@@ -181,13 +185,14 @@ const navigate = useNavigate();
                                                             quantity: 1,
                                                             imageUrl: product.imageUrl,
                                                         });
-                                                        console.log('Added to cart:', product.name);
-                                                        navigate('/cart');
+                                                        setMessage(`${product.name} added to cart`);
+                                                        setTimeout(() => setMessage(null), 3000);
                                                     } catch (error) {
                                                         console.error('Error adding to cart:', error);
+                                                        setMessage('Error adding to cart');
+                                                        setTimeout(() => setMessage(null), 3000);
                                                     }
                                                 }}
-                                                
                                                 className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition-colors"
                                             >
                                                 Add to Cart
@@ -201,9 +206,19 @@ const navigate = useNavigate();
                 ) : (
                     <div className="flex flex-col items-center justify-center h-64">
                         <div className="text-gray-500 text-lg mb-2">No products available from this shop</div>
-                        <Link to="/" className="text-blue-600 hover:underline">
-                            Return to home
-                        </Link>
+                        <button
+                        onClick={() => navigate(-1)}
+                            className="text-blue-600 hover:underline"
+>
+    Return to home
+</button>
+                        <div className="text-gray-500 text-sm mt-2">or</div>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="text-blue-600 hover:underline"
+                        >
+                            Explore other shops
+                        </button>       
                     </div>
                 )}
             </div>
