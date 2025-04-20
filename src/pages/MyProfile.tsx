@@ -1,26 +1,51 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Home as HomeIcon, Heart, Bell } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+
+interface StudentData {
+  stuname: string;
+}
 
 export default function MyProfile() {
   const navigate = useNavigate();
-  const { currentUser } = useAuth(); 
+  const { user } = useAuth();
+  const [studentData, setStudentData] = useState<StudentData | null>(null);
+
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      if (user) {
+        try {
+          const studentDoc = await getDoc(doc(db, 'Students', user.uid));
+          if (studentDoc.exists()) {
+            setStudentData(studentDoc.data() as StudentData);
+          }
+        } catch (error) {
+          console.error('Error fetching student data:', error);
+        }
+      }
+    };
+
+    fetchStudentData();
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Profile Header */}
       <div className="bg-[#FF5733] p-6 text-white">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-20 h-20 bg-white rounded-full overflow-hidden">
+          {/* <div className="w-20 h-20 bg-white rounded-full overflow-hidden">
             <img
               src={currentUser?.photoURL || "https://images.unsplash.com/photo-1494790108377-be9c29b29330"}
               alt="Profile"
               className="w-full h-full object-cover"
             />
-          </div>
+          </div> */}
           <div>
-            <h2 className="text-2xl font-bold">{currentUser?.displayName || 'Ginny Miller'}</h2>
-            <p className="text-sm opacity-80">{currentUser?.email || 'ginny234@gmail.com'}</p>
+            <h2 className="text-2xl font-bold">{studentData?.stuname || user?.displayName || 'Student'}</h2>
+            <p className="text-sm opacity-80">{user?.email || 'student@example.com'}</p>
           </div>
         </div>
       </div>
@@ -33,21 +58,21 @@ export default function MyProfile() {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-gray-600 text-lg">Name</span>
-              <span className="font-medium text-lg">{currentUser?.displayName || 'Ginny Miller'}</span>
+              <span className="font-medium text-lg">{studentData?.stuname || user?.displayName || 'Student'}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600 text-lg">Email</span>
-              <span className="font-medium text-lg">{currentUser?.email || 'ginny234@gmail.com'}</span>
+              <span className="font-medium text-lg">{user?.email || 'student@example.com'}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600 text-lg">Phone</span>
-              <span className="font-medium text-lg">{currentUser?.phoneNumber || '+91 8789890989'}</span>
+              <span className="font-medium text-lg">{user?.phoneNumber || 'Not provided'}</span>
             </div>
           </div>
         </div>
 
         {/* Recent Orders */}
-        <div className="bg-white rounded-xl shadow-md p-6">
+        {/* <div className="bg-white rounded-xl shadow-md p-6">
           <h3 className="text-xl font-semibold mb-4">Recent Orders</h3>
           <div className="space-y-4">
             <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
@@ -71,7 +96,7 @@ export default function MyProfile() {
           >
             View All Orders
           </button>
-        </div>
+        </div> */}
 
         {/* Account Settings */}
         <div className="bg-white rounded-xl shadow-md p-6">

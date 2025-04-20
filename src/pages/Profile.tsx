@@ -13,16 +13,36 @@ import {
   Bell
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const [studentName, setStudentName] = useState('');
+
+  useEffect(() => {
+    const fetchStudentName = async () => {
+      if (user) {
+        try {
+          const studentDoc = await getDoc(doc(db, 'Students', user.uid));
+          if (studentDoc.exists()) {
+            setStudentName(studentDoc.data().stuname || '');
+          }
+        } catch (error) {
+          console.error('Error fetching student name:', error);
+        }
+      }
+    };
+
+    fetchStudentName();
+  }, [user]);
 
   const menuItems = [
     { icon: <ShoppingBag className="w-6 h-6" />, label: 'My Orders', path: '/my-orders' },
     { icon: <User className="w-6 h-6" />, label: 'My Profile', path: '/my-profile' },
     { icon: <MapPin className="w-6 h-6" />, label: 'Delivery Address', path: '/delivery-address' },
-    
     { icon: <Phone className="w-6 h-6" />, label: 'Contact Us', path: '/contact' },
     { icon: <HelpCircle className="w-6 h-6" />, label: 'Help & FAQs', path: '/help-faqs' },
     { icon: <Settings className="w-6 h-6" />, label: 'Settings', path: '/settings' },
@@ -43,15 +63,8 @@ export default function Profile() {
       <div className="max-w-lg mx-auto px-6">
         {/* Profile Header */}
         <div className="pt-12 pb-8 flex flex-col items-center">
-          <div className="w-32 h-32 bg-white rounded-full overflow-hidden border-4 border-white shadow-xl mb-6">
-            <img
-              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330" 
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <h2 className="text-3xl font-bold text-white">Ginny Miller</h2>
-          <p className="text-base text-white/90">ginny234@email.com</p>
+          <h2 className="text-3xl font-bold text-white">{studentName || 'Student'}</h2>
+          <p className="text-base text-white/90">{user?.email || ''}</p>
         </div>
 
         {/* Menu Items Card */}
@@ -86,9 +99,6 @@ export default function Profile() {
           <span>Log Out</span>
         </button>
       </div>
-
-     
-
     </div>
   );
 }

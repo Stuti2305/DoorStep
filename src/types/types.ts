@@ -16,7 +16,7 @@
 //     createdAt: string;
 //     updatedAt: string;
 //   }
-  export type UserRole = 'admin' | 'shopkeeper' | 'student';
+  export type UserRole = 'admin' | 'shopkeeper' | 'student' | 'delivery';
 
   export interface User {
     uid: string;
@@ -118,7 +118,6 @@
   }
   
   export interface Shop {
-    image: string | undefined;
     id: string;
     ownerId: string;
     name: string;

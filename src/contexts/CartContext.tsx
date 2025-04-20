@@ -9,7 +9,6 @@ interface CartContextType {
   total: number;
   loading: boolean;
   addToCart: (item: CartItem) => Promise<void>;
-  cartItems: CartItem[];
   removeFromCart: (productId: string) => Promise<void>;
   updateQuantity: (productId: string, quantity: number) => Promise<void>;
   getQuantity: (productId: string) => number;
@@ -141,7 +140,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         total,
         loading,
         addToCart,
-        cartItems: items,
         removeFromCart,
         updateQuantity,
         getQuantity,

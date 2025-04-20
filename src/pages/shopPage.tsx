@@ -1,22 +1,26 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { db, storage } from '../lib/firebase';
+import { db } from '../lib/firebase';
+import { useNavigate } from 'react-router-dom';
 import { Product, Shop } from '../types/types';
 import { ChevronLeft, Star, MapPin, Clock } from 'lucide-react';
-import { getDownloadURL, ref, listAll } from "firebase/storage";
-import { useCart } from '../contexts/CartContext';
+import { getDownloadURL, ref } from "firebase/storage";
+import { storage } from "../lib/firebase";
+import { listAll } from "firebase/storage";
+import { useCart } from '../contexts/CartContext'; // Adjust path if needed
 import { useAuth } from '../contexts/AuthContext';
+
 
 export default function ShopPage() {
     const { shopId } = useParams<{ shopId: string }>();
     const [products, setProducts] = useState<Product[]>([]);
     const [shop, setShop] = useState<Shop | null>(null);
     const [loading, setLoading] = useState(true);
-    const [message, setMessage] = useState<string | null>(null);
     const { addToCart } = useCart();
     const { user } = useAuth();
-    const navigate = useNavigate();
+
+const navigate = useNavigate();
 
     useEffect(() => {
         const fetchShopAndProducts = async () => {
@@ -46,15 +50,16 @@ export default function ShopPage() {
                             const listResult = await listAll(folderRef);
 
                             if (listResult.items.length > 0) {
-                                const imageRef = listResult.items[0];
+                                const imageRef = listResult.items[0]; // get first image
                                 const imageUrl = await getDownloadURL(imageRef);
                                 productData.imageUrl = imageUrl;
                             } else {
+                                console.warn("No images found for product:", productData.id);
                                 productData.imageUrl = "";
                             }
                         } catch (err) {
                             console.warn("Error fetching image for:", productData.id, err);
-                            productData.imageUrl = "";
+                            productData.imageUrl = ""; // fallback
                         }
 
                         productList.push(productData);
@@ -71,26 +76,17 @@ export default function ShopPage() {
 
         fetchShopAndProducts();
     }, [shopId]);
-
     useEffect(() => {
         if (user && user.role === 'shopkeeper' && user.shopId === shopId) {
             navigate('/shop/dashboard');
         }
     }, [user, shopId, navigate]);
-
     return (
-        <div className="min-h-screen bg-gray-50 relative">
-            {/* Global popup message */}
-            {message && (
-                <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-green-600 text-white text-lg font-semibold px-6 py-3 rounded-xl shadow-lg">
-                    {message}
-                </div>
-            )}
-
+        <div className="min-h-screen bg-gray-50">
             {/* Shop Header */}
             <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
                 <div className="max-w-7xl mx-auto px-4 py-8">
-                    <Link to="/home" className="inline-flex items-center space-x-2 text-white hover:text-white/80 mb-4">
+                    <Link to="/" className="inline-flex items-center space-x-2 text-white hover:text-white/80 mb-4">
                         <ChevronLeft className="w-5 h-5" />
                         <span>Back to Home</span>
                     </Link>
@@ -99,7 +95,7 @@ export default function ShopPage() {
                         <div className="flex flex-col md:flex-row md:items-center gap-6 mt-4">
                             <div className="w-24 h-24 rounded-xl overflow-hidden">
                                 <img
-                                    src={shop.imageUrl} 
+                                    src={shop.imageUrl}
                                     alt={shop.name}
                                     className="w-full h-full object-cover"
                                 />
@@ -114,11 +110,11 @@ export default function ShopPage() {
                                         </div>
                                     )}
                                 </div>
-                                <div className="text-white/80 mt-1">Price for Two: {shop.priceForTwo}</div>
+                                <div className="text-white/80 mt-1">{shop.cuisine}</div>
                                 <div className="flex items-center space-x-4 mt-2">
                                     <div className="flex items-center space-x-1">
                                         <MapPin className="w-4 h-4" />
-                                        <span>{shop.description}</span>
+                                        <span>{shop.location}</span>
                                     </div>
                                     {shop.deliveryTime && (
                                         <div className="flex items-center space-x-1">
@@ -185,14 +181,13 @@ export default function ShopPage() {
                                                             quantity: 1,
                                                             imageUrl: product.imageUrl,
                                                         });
-                                                        setMessage(`${product.name} added to cart`);
-                                                        setTimeout(() => setMessage(null), 3000);
+                                                        console.log('Added to cart:', product.name);
+                                                        navigate('/cart');
                                                     } catch (error) {
                                                         console.error('Error adding to cart:', error);
-                                                        setMessage('Error adding to cart');
-                                                        setTimeout(() => setMessage(null), 3000);
                                                     }
                                                 }}
+                                                
                                                 className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition-colors"
                                             >
                                                 Add to Cart
@@ -206,19 +201,9 @@ export default function ShopPage() {
                 ) : (
                     <div className="flex flex-col items-center justify-center h-64">
                         <div className="text-gray-500 text-lg mb-2">No products available from this shop</div>
-                        <button
-                        onClick={() => navigate(-1)}
-                            className="text-blue-600 hover:underline"
->
-    Return to home
-</button>
-                        <div className="text-gray-500 text-sm mt-2">or</div>
-                        <button
-                            onClick={() => navigate('/')}
-                            className="text-blue-600 hover:underline"
-                        >
-                            Explore other shops
-                        </button>       
+                        <Link to="/" className="text-blue-600 hover:underline">
+                            Return to home
+                        </Link>
                     </div>
                 )}
             </div>
