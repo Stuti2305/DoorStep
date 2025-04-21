@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ShoppingCart, User, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { UserRole } from '../types';
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
@@ -23,7 +24,7 @@ export default function Navbar() {
                   <ShoppingCart className="w-6 h-6 text-white" />
                 </Link>
                 <Link
-                  to="/profile"
+                  to={user.role === 'delivery' ? '/delivery/settings' : '/profile'}
                   className="p-2 hover:bg-blue-500 rounded-full transition-colors"
                 >
                   <User className="w-6 h-6 text-white" />
