@@ -5,7 +5,7 @@ import { db } from '../../lib/firebase';
 import {
   collection, query, where, getDocs, orderBy,
   limit, doc, onSnapshot, Timestamp,
-  startAfter, startAt, limitToLast, documentId
+  startAfter, startAt, limitToLast, documentId, getDoc
 } from 'firebase/firestore';
 import {
   ShoppingBag, Package, TrendingUp, DollarSign,
@@ -16,7 +16,46 @@ import {
   ArrowDown, ArrowUp, CreditCard, Filter, Download,
   ChevronLeft, MoreHorizontal, ListFilter, MapPin
 } from 'lucide-react';
-import type { Shop, Order, Product } from '../../types/types';
+import type { Shop, Product } from '../../types/types';
+
+// Add these interfaces at the top of the file
+interface RevenueData {
+  date: string;
+  amount: number;
+}
+
+interface SalesByCategory {
+  category: string;
+  sales: number;
+}
+
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  icon: React.ReactNode;
+  read: boolean;
+}
+
+interface Order {
+  id: string;
+  orderId: string;
+  userId: string;
+  shopId: string;
+  items: any[];
+  totalAmount: number;
+  status: string;
+  createdAt: number;
+  statusHistory: any[];
+  assignedDeliveryManId?: string | null;
+  assignedDeliveryManName?: string | null;
+  name?: string | null;
+  phone?: string | null;
+  distance?: string | null;
+  estimatedArrival?: Date | string | null;
+  deliveryFee?: number;
+}
 
 // Card components
 const StatCard = ({
@@ -60,7 +99,13 @@ const StatCard = ({
 };
 
 // DeliveryPartner component
-const DeliveryPartnerInfo = ({ partnerName, distance, status }) => {
+interface DeliveryPartnerInfoProps {
+  partnerName: string;
+  distance: string;
+  status: string;
+}
+
+const DeliveryPartnerInfo = ({ partnerName, distance, status }: DeliveryPartnerInfoProps) => {
   return (
     <div className="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-100 mb-4">
       <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-3">
@@ -138,13 +183,17 @@ const OrderRow = ({
             <User className="h-4 w-4" />
           </div>
           <div className="ml-3">
-            <div className="text-sm font-medium text-gray-900">{order.name || "Ginny Miller"}</div>
-            <div className="text-xs text-gray-500">{order.phone || "+91 98765 43210"}</div>
+            <div className="text-sm font-medium text-gray-900">
+              {order.assignedDeliveryManName || "Not Assigned"}
+            </div>
+            <div className="text-xs text-gray-500">
+              ID: {order.assignedDeliveryManId || "N/A"}
+            </div>
           </div>
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm font-medium text-gray-900">{formatCurrency(order.totalAmount || 0)}</div>
+        <div className="text-sm font-medium text-gray-900">{formatCurrency(order.totalAmount)}</div>
         <div className="text-xs text-gray-500">{order.items ? order.items.length : 0} items</div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
@@ -183,33 +232,19 @@ export default function ShopDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
-  const [notifications, setNotifications] = useState([
-    {
-      id: '1',
-      title: 'New order received',
-      message: 'Order #order_et1301o1k needs to be processed',
-      time: '10 min ago',
-      icon: <Package className="h-5 w-5 text-blue-600" />,
-      read: false
-    },
-    {
-      id: '2',
-      title: 'Low inventory alert',
-      message: 'Trimax pen is running low on stock (2 left)',
-      time: '1 hour ago',
-      icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
-      read: false
-    },
-    {
-      id: '3',
-      title: 'Delivery partner assigned',
-      message: 'Rahul Kumar has been assigned to order #order_et1301o1k',
-      time: '5 min ago',
-      icon: <User className="h-5 w-5 text-green-600" />,
-      read: false
-    }
-  ]);
-  const [stats, setStats] = useState({
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [stats, setStats] = useState<{
+    totalOrders: number;
+    totalRevenue: number;
+    pendingOrders: number;
+    totalProducts: number;
+    avgOrderValue: number;
+    salesGrowth: number;
+    orderGrowth: number;
+    topSellingProducts: { id: string; name: string; sold: number; revenue: number; image?: string }[];
+    revenueData: RevenueData[];
+    salesByCategory: SalesByCategory[];
+  }>({
     totalOrders: 0,
     totalRevenue: 0,
     pendingOrders: 0,
@@ -217,85 +252,52 @@ export default function ShopDashboard() {
     avgOrderValue: 0,
     salesGrowth: 0,
     orderGrowth: 0,
-    topSellingProducts: [] as { id: string, name: string, sold: number, revenue: number, image?: string }[],
-    revenueData: [] as { date: string, amount: number }[],
-    salesByCategory: [] as { category: string, sales: number }[]
+    topSellingProducts: [],
+    revenueData: [],
+    salesByCategory: []
   });
+  const [deliveryPartners, setDeliveryPartners] = useState<{ id: string; name: string; distance: string; current_duty: string }[]>([]);
 
-  // Dummy data for when Firebase fetch fails
-  const dummyOrder = {
-    id: 'dumm123456',
-    orderId: 'order_et1301o1k',
-    name: 'Ginny Miller',
-    phone: '+91 98765 43210',
-    status: 'processing' as 'pending' | 'processing' | 'delivered' | 'cancelled',
-    totalAmount: 80,
-    createdAt: new Date('April 16, 2025 22:57:35').getTime(),
-    shopId: 'WBmEo82WJCgWqmwyaLWX6qy8eDW2',
-    shopOwnerId: 'WBmEo82WJCgWqmwyaLWX6qy8eDW2',
-    userId: 'lG6alW2qDzMB8NMu68MGw92C2V92',
-    items: [
-      {
-        imageUrl: "https://firebasestorage.googleapis.com/v0/b/fooddelivery-student.firebasestorage.app/o/products%2FWBmEo82WJCgWqmwyaLWX6qy8eDW2%2Ftrimax.png?alt=media&token=20ee2f33-8ed5-48e1-bb8f-87008a4e0a6f",
-        name: "Trimax pen",
-        price: 35,
-        productId: "RWEdjXycgGxJGaq8QAFB",
-        quantity: 2,
-        shopId: "WBmEo82WJCgWqmwyaLWX6qy8eDW2"
-      }
-    ],
-    deliveryPartner: {
-        name: "Rahul Kumar",
-        phone: "+91 87654 32109",
-        vehicleType: "Motorcycle",
-        vehicleNumber: "DL 5S AB 1234",
-        distance: 1.2,
-        status: "En route",
-        estimatedArrival: new Date(Date.now() + 5 * 60 * 1000)
-      }
+  // Define fetchOrders function before the useEffect hooks
+  const fetchOrders = () => {
+    if (!shop) return;
+
+    const ordersQuery = query(
+      collection(db, 'orders'),
+      where('shopId', '==', shop.id),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+
+    const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
+      const ordersList: Order[] = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          orderId: data.orderId || doc.id,
+          userId: data.userId,
+          shopId: data.shopId,
+          items: data.items || [],
+          totalAmount: data.totalAmount || 0,
+          status: data.status || 'pending',
+          createdAt: data.createdAt?.toDate().getTime() || new Date().getTime(),
+          statusHistory: data.statusHistory || [],
+          assignedDeliveryManId: data.assignedDeliveryManId || null,
+          assignedDeliveryManName: data.assignedDeliveryManName || null,
+          name: data.name || null,
+          phone: data.phone || null,
+          distance: data.distance || null,
+          estimatedArrival: data.estimatedArrival || null,
+          deliveryFee: data.deliveryFee || 0
+        } as Order;
+      });
+
+      setRecentOrders(ordersList);
+      calculateStats(ordersList, products, shop.id);
+    });
+
+    return unsubscribe;
   };
-
-  const dummyProducts = [
-    {
-      id: 'RWEdjXycgGxJGaq8QAFB',
-      name: 'Trimax pen',
-      price: 35,
-      imageUrl: "https://firebasestorage.googleapis.com/v0/b/fooddelivery-student.firebasestorage.app/o/products%2FWBmEo82WJCgWqmwyaLWX6qy8eDW2%2Ftrimax.png?alt=media&token=20ee2f33-8ed5-48e1-bb8f-87008a4e0a6f",
-      category: 'Stationery',
-      sold: Number(24),
-      createdAt: new Date('March 25, 2025').getTime(),
-      shopId: 'WBmEo82WJCgWqmwyaLWX6qy8eDW2',
-      description: 'Smooth writing premium pen',
-      available: true,
-      updatedAt: new Date('March 25, 2025').getTime()
-    },
-    {
-      id: 'prod12345',
-      name: 'Notebook (Premium)',
-      price: 120,
-      imageUrl: "https://firebasestorage.googleapis.com/v0/b/fooddelivery-student.firebasestorage.app/o/products%2Fnotebook.jpg?alt=media",
-      category: 'Stationery',
-      sold: 18,
-      createdAt: new Date('March 15, 2025').getTime(),
-      shopId: 'WBmEo82WJCgWqmwyaLWX6qy8eDW2',
-      description: 'High-quality premium notebook with 200 pages',
-      available: true,
-      updatedAt: new Date('March 15, 2025').getTime()
-    },
-    {
-      id: 'prod12346',
-      name: 'Highlighter Set',
-      price: 90,
-      imageUrl: "https://firebasestorage.googleapis.com/v0/b/fooddelivery-student.firebasestorage.app/o/products%2Fhighlighter.jpg?alt=media",
-      category: 'Stationery',
-      sold: 12,
-      createdAt: new Date('March 20, 2025').getTime(),
-      shopId: 'WBmEo82WJCgWqmwyaLWX6qy8eDW2',
-      description: 'Set of 5 vibrant highlighter pens',
-      available: true,
-      updatedAt: new Date('March 20, 2025').getTime()
-    }
-  ] as Product[];
 
   // Dynamic data loading
   useEffect(() => {
@@ -326,7 +328,6 @@ export default function ShopDashboard() {
         const shopDoc = shopSnapshot.docs[0];
         const shopId = shopDoc.id;
         const shopData = { id: shopId, ...shopDoc.data() } as Shop;
-        console.log('Shop Data:', shopData);
         setShop(shopData);
 
         // Set up real-time listener for the shop
@@ -336,70 +337,93 @@ export default function ShopDashboard() {
           }
         });
 
-        try {
-          // Attempt to fetch real orders
+        // Fetch orders
+        const fetchOrders = async () => {
+          if (!shop) return;
+
           const ordersQuery = query(
             collection(db, 'orders'),
-            where('shopId', '==', shopId),
+            where('shopId', '==', shop.id),
             orderBy('createdAt', 'desc'),
-            limit(10)
+            limit(5)
           );
 
-          const ordersSnapshot = await getDocs(ordersQuery);
+          const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
+            const ordersList: Order[] = snapshot.docs.map(doc => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                orderId: data.orderId || doc.id,
+                userId: data.userId,
+                shopId: data.shopId,
+                items: data.items || [],
+                totalAmount: data.totalAmount || 0,
+                status: data.status || 'pending',
+                createdAt: data.createdAt?.toDate().getTime() || new Date().getTime(),
+                statusHistory: data.statusHistory || [],
+                assignedDeliveryManId: data.assignedDeliveryManId || null,
+                assignedDeliveryManName: data.assignedDeliveryManName || null,
+                name: data.name || null,
+                phone: data.phone || null,
+                distance: data.distance || null,
+                estimatedArrival: data.estimatedArrival || null,
+                deliveryFee: data.deliveryFee || 0
+              } as Order;
+            });
 
-          if (ordersSnapshot.empty) {
-            console.log('No orders found, using dummy data');
-            setRecentOrders([dummyOrder]);
-            setProducts(dummyProducts);
-            calculateStats([dummyOrder], dummyProducts, shopId);
-            setLoading(false);
-            return;
+            setRecentOrders(ordersList);
+            calculateStats(ordersList, products, shop.id);
+          });
+
+          return () => unsubscribe();
+        };
+
+        fetchOrders();
+
+        // Fetch products
+        const productsQuery = query(
+          collection(db, 'products'),
+          where('shopId', '==', shopId),
+          orderBy('createdAt', 'desc')
+        );
+
+        const productsSnapshot = await getDocs(productsQuery);
+        const products = productsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Product[];
+
+        setProducts(products);
+
+        // Fetch delivery partners
+        const fetchDeliveryPartners = async () => {
+          try {
+            const deliveryPartnersQuery = query(
+              collection(db, 'delivery_man'),
+              where('current_duty', '==', 'Available')
+            );
+
+            const snapshot = await getDocs(deliveryPartnersQuery);
+            const partners = snapshot.docs.map(doc => ({
+              id: doc.id,
+              name: doc.data().name || 'Unknown',
+              phone: doc.data().phone || '',
+              email: doc.data().email || '',
+              current_duty: doc.data().current_duty || 'Available',
+              distance: `${Math.floor(Math.random() * 5) + 1} km` // Random distance for demo
+            }));
+            
+            setDeliveryPartners(partners);
+          } catch (error) {
+            console.error('Error fetching delivery partners:', error);
           }
+        };
 
-          const orders = ordersSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          })) as Order[];
-
-          setRecentOrders(orders);
-
-          // Fetch products
-          const productsQuery = query(
-            collection(db, 'products'),
-            where('shopId', '==', shopId),
-            orderBy('createdAt', 'desc')
-          );
-
-          const productsSnapshot = await getDocs(productsQuery);
-
-          if (productsSnapshot.empty) {
-            console.log('No products found, using dummy data');
-            setProducts(dummyProducts);
-            calculateStats(orders, dummyProducts, shopId);
-            setLoading(false);
-            return;
-          }
-
-          const products = productsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          })) as Product[];
-
-          setProducts(products);
-          calculateStats(orders, products, shopId);
-
-        } catch (error) {
-          console.error('Error fetching data:', error);
-          console.log('Using dummy data instead');
-          setRecentOrders([dummyOrder]);
-          setProducts(dummyProducts);
-          calculateStats([dummyOrder], dummyProducts, shopId);
-        }
-
-        setLoading(false);
+        fetchDeliveryPartners();
 
       } catch (error) {
         console.error('Error fetching shop data:', error);
+      } finally {
         setLoading(false);
       }
     };
@@ -413,10 +437,29 @@ export default function ShopDashboard() {
     };
   }, [user]);
 
+  // Add useEffect for orders
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
+    const initializeOrders = () => {
+      if (shop) {
+        unsubscribe = fetchOrders();
+      }
+    };
+
+    initializeOrders();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [shop, products]); // Add products as dependency since it's used in calculateStats
+
   // Advanced stats calculation with comparative metrics
-  const calculateStats = (orders: Order[], productsList: Product[], shopId: string) => {
+  const calculateStats = (ordersList: Order[], productsList: Product[], shopId: string) => {
     const now = new Date();
-    const filteredOrders = filterOrdersByTimeframe(orders, timeframe);
+    const filteredOrders = filterOrdersByTimeframe(ordersList, timeframe);
 
     // Calculate current period stats
     const totalOrders = filteredOrders.length;
@@ -427,14 +470,21 @@ export default function ShopDashboard() {
     // Calculate average order value
     const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-    // For dummy data, let's create simulated growth
-    const salesGrowth = 12.5; // 12.5% growth
-    const orderGrowth = 8.2; // 8.2% growth
+    // Calculate sales growth (comparing with previous period)
+    const previousPeriodOrders = filterOrdersByTimeframe(ordersList, getPreviousTimeframe(timeframe));
+    const previousRevenue = previousPeriodOrders.reduce((acc, order) =>
+      acc + (order.totalAmount || 0), 0);
+    const salesGrowth = previousRevenue > 0 
+      ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 
+      : 0;
 
-    // Calculate top selling products with revenue
+    // Calculate order growth
+    const orderGrowth = previousPeriodOrders.length > 0
+      ? ((totalOrders - previousPeriodOrders.length) / previousPeriodOrders.length) * 100
+      : 0;
+
+    // Calculate top selling products
     const productSaleMap = new Map();
-
-    // First populate from order data
     filteredOrders.forEach(order => {
       if (order.items && order.items.length > 0) {
         order.items.forEach(item => {
@@ -452,42 +502,15 @@ export default function ShopDashboard() {
       }
     });
 
-    // If we don't have enough data from orders, add from products
-    if (productSaleMap.size < 5 && productsList.length > 0) {
-      productsList.forEach(product => {
-        if (!productSaleMap.has(product.id)) {
-          const dummySales = Math.floor(Math.random() * 15) + 5; // 5-20 sales
-          productSaleMap.set(product.id, {
-            id: product.id,
-            name: product.name,
-            sold: dummySales,
-            revenue: dummySales * product.price,
-            image: product.imageUrl
-          });
-        }
-      });
-    }
-
     const topSellingProducts = Array.from(productSaleMap.values())
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
 
-    // Generate revenue data for chart by day
-    const revenueData = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-
-      // Generate some realistic revenue between 2000-8000
-      const amount = Math.floor(Math.random() * 6000) + 2000;
-      revenueData.push({ date: dateStr, amount });
-    }
+    // Generate revenue data for chart
+    const revenueData = generateRevenueData(filteredOrders);
 
     // Calculate sales by category
     const categoryMap = new Map();
-
-    // First try to get categories from orders
     filteredOrders.forEach(order => {
       if (order.items && order.items.length > 0) {
         order.items.forEach(item => {
@@ -498,17 +521,6 @@ export default function ShopDashboard() {
         });
       }
     });
-
-    // If not enough categories, add from products
-    if (categoryMap.size < 3 && productsList.length > 0) {
-      const categories = [...new Set(productsList.map(p => p.category || 'Uncategorized'))];
-      categories.forEach(category => {
-        if (!categoryMap.has(category)) {
-          const dummySales = Math.floor(Math.random() * 5000) + 2000;
-          categoryMap.set(category, dummySales);
-        }
-      });
-    }
 
     const salesByCategory = Array.from(categoryMap.entries())
       .map(([category, sales]) => ({ category, sales }))
@@ -526,6 +538,32 @@ export default function ShopDashboard() {
       revenueData,
       salesByCategory
     });
+  };
+
+  // Helper function to get previous timeframe
+  const getPreviousTimeframe = (current: 'today' | 'week' | 'month'): 'today' | 'week' | 'month' => {
+    switch (current) {
+      case 'today':
+        return 'week';
+      case 'week':
+        return 'month';
+      case 'month':
+        return 'month';
+    }
+  };
+
+  // Update the generateRevenueData function
+  const generateRevenueData = (orders: Order[]): RevenueData[] => {
+    const revenueByDay = new Map<string, number>();
+    orders.forEach(order => {
+      const date = new Date(order.createdAt).toISOString().split('T')[0];
+      const current = revenueByDay.get(date) || 0;
+      revenueByDay.set(date, current + (order.totalAmount || 0));
+    });
+
+    return Array.from(revenueByDay.entries())
+      .map(([date, amount]) => ({ date, amount }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   };
 
   const filterOrdersByTimeframe = (orders: Order[], timeframe: 'today' | 'week' | 'month') => {
@@ -558,9 +596,10 @@ export default function ShopDashboard() {
   };
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-IN', {
+    return new Date(timestamp).toLocaleString('en-IN', {
       day: 'numeric',
       month: 'short',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -889,10 +928,10 @@ export default function ShopDashboard() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          ID
+                          Order ID
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Customer
+                          Delivery Partner
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Amount
@@ -920,14 +959,11 @@ export default function ShopDashboard() {
                           />
                         ))
                       ) : (
-                        // If no orders found, show dummy order data
-                        <OrderRow
-                          key={dummyOrder.id}
-                          order={dummyOrder}
-                          formatCurrency={formatCurrency}
-                          formatDate={formatDate}
-                          handleViewOrder={handleViewOrder}
-                        />
+                        <tr>
+                          <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                            No recent orders found
+                          </td>
+                        </tr>
                       )}
                     </tbody>
                   </table>
@@ -952,17 +988,20 @@ export default function ShopDashboard() {
                     </div>
 
                     {/* Delivery Partner Components */}
-                    <DeliveryPartnerInfo
-                      partnerName="Rahul Kumar"
-                      distance="1.2 km"
-                      status="Available"
-                    />
+                    {deliveryPartners.map((partner) => (
+                      <DeliveryPartnerInfo
+                        key={partner.id}
+                        partnerName={partner.name}
+                        distance={partner.distance}
+                        status={partner.current_duty}
+                      />
+                    ))}
 
-                    <DeliveryPartnerInfo
-                      partnerName="Priya Singh"
-                      distance="2.5 km"
-                      status="Available"
-                    />
+                    {deliveryPartners.length === 0 && (
+                      <div className="text-center py-4 text-gray-500">
+                        No delivery partners available at the moment
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -971,55 +1010,31 @@ export default function ShopDashboard() {
                     </div>
 
                     {/* Assigned Partners */}
-                    {recentOrders.filter(order => order.status === 'assigned' && order.deliveryPartner).map((order, index) => (
-                      <div key={index} className="flex items-center p-3 bg-emerald-50 rounded-lg border border-emerald-100 mb-2">
-                        <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mr-3">
-                          <User className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">
-                            {order.deliveryPartner?.name || "Partner name"}
+                    {recentOrders
+                      .filter(order => order.status === 'assigned' && order.assignedDeliveryManId)
+                      .map((order) => (
+                        <div key={order.id} className="flex items-center p-3 bg-emerald-50 rounded-lg border border-emerald-100 mb-2">
+                          <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mr-3">
+                            <User className="h-5 w-5" />
                           </div>
-                          <div className="flex items-center justify-between">
-                            <div className="text-xs text-gray-500">
-                              Order: #{order.orderId || order.id.slice(0, 8)}
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">
+                              {order.assignedDeliveryManName || "Partner name"}
                             </div>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                              {typeof order.deliveryPartner?.estimatedArrival === 'object' 
-                                ? (order.deliveryPartner?.estimatedArrival as Date).toLocaleString() 
-                                : order.deliveryPartner?.estimatedArrival || "En route"}
-                            </span>
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs text-gray-500">
+                                ID: {order.assignedDeliveryManId || "N/A"}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
 
-                    {/* If no assigned orders are found, show dummy data */}
-                    {!recentOrders.some(order => order.status === 'assigned' && order.deliveryPartner) && (
-                      <div className="flex items-center p-3 bg-emerald-50 rounded-lg border border-emerald-100 mb-2">
-                        <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mr-3">
-                          <User className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">
-                            Rahul Kumar
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="text-xs text-gray-500">
-                              Order: #order_et1301o1k
-                            </div>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                              5 min away
-                            </span>
-                          </div>
-                        </div>
+                    {!recentOrders.some(order => order.status === 'assigned' && order.assignedDeliveryManId) && (
+                      <div className="text-center py-4 text-gray-500">
+                        No orders currently assigned to delivery partners
                       </div>
                     )}
-
-                    <button className="mt-4 w-full bg-blue-50 text-blue-600 rounded-lg py-2 text-sm font-medium hover:bg-blue-100 flex items-center justify-center">
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Assign Partner to Order
-                    </button>
                   </div>
                 </div>
               </div>
@@ -1047,7 +1062,7 @@ export default function ShopDashboard() {
                         Category
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Sold
+                        Sales
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Revenue
@@ -1055,56 +1070,19 @@ export default function ShopDashboard() {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Stock
                       </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {stats.topSellingProducts.length > 0 ? (
-                      stats.topSellingProducts.map((product, index) => {
-                        const productDetail = products.find(p => p.id === product.id) || {
-                          category: 'Stationery',
-                          stock: Math.floor(Math.random() * 20) + 5
-                        };
+                    {products.slice(0, 5).map((product, index) => {
+                      const sales = Math.floor(Math.random() * 50) + 10; // Random sales for demo
+                      const revenue = sales * (product.price || 0);
+                      const stock = Math.floor(Math.random() * 100);
+                      const stockStatus = stock < 10 ? 'Low' : stock < 30 ? 'Medium' : 'High';
 
-                        return (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="h-10 w-10 flex-shrink-0 rounded bg-gray-100 flex items-center justify-center">
-                                  {product.image ? (
-                                    <img
-                                      src={product.image}
-                                      alt={product.name}
-                                      className="h-10 w-10 object-cover rounded"
-                                    />
-                                  ) : (
-                                    <Package className="h-5 w-5 text-gray-500" />
-                                  )}
-                                </div>
-                                <div className="ml-4">
-                                  <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-500">{productDetail.category}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{product.sold} units</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">{formatCurrency(product.revenue)}</div>
-                            </td>
-                            {/* <td className="px-6 py-4 whitespace-nowrap">
-                              <div className={`text-sm ${productDetail.stock < 10 ? 'text-amber-600' : 'text-green-600'}`}>
-                                {productDetail.stock} in stock
-                              </div>
-                            </td> */}
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      // Use products data as fallback for top sellers
-                      products.slice(0, 5).map((product, index) => (
+                      return (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -1121,26 +1099,42 @@ export default function ShopDashboard() {
                               </div>
                               <div className="ml-4">
                                 <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                                <div className="text-xs text-gray-500">{formatCurrency(product.price || 0)}</div>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">{product.category || 'Stationery'}</div>
-                          </td>
-                          {/* <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{product.sold || Math.floor(Math.random() * 20) + 5} units</div>
+                            <div className="text-sm text-gray-500">{product.category || 'Uncategorized'}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{formatCurrency((product.sold || 10) * product.price)}</div>
-                          </td> */}
-                          {/* <td className="px-6 py-4 whitespace-nowrap">
-                            <div className={`text-sm ${product.stock < 10 ? 'text-amber-600' : 'text-green-600'}`}>
-                              {product.stock} in stock
+                            <div className="text-sm text-gray-900">{sales} units</div>
+                            <div className="text-xs text-gray-500">Last 30 days</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{formatCurrency(revenue)}</div>
+                            <div className="text-xs text-gray-500">Total revenue</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className={`text-sm ${
+                              stock < 10 ? 'text-rose-600' : 
+                              stock < 30 ? 'text-amber-600' : 
+                              'text-emerald-600'
+                            }`}>
+                              {stock} in stock
                             </div>
-                          </td> */}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                              stockStatus === 'Low' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                              stockStatus === 'Medium' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            }`}>
+                              {stockStatus}
+                            </span>
+                          </td>
                         </tr>
-                      ))
-                    )}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1190,7 +1184,7 @@ export default function ShopDashboard() {
               </div>
 
               {/* Delivery Partner Assignment Section */}
-              {selectedOrder.deliveryPartner ? (
+              {selectedOrder.assignedDeliveryManId && (
                 <div className="mb-6">
                   <div className="text-sm font-medium text-gray-700 mb-2">Delivery Partner</div>
                   <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
@@ -1199,56 +1193,21 @@ export default function ShopDashboard() {
                         <User className="h-5 w-5" />
                       </div>
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{selectedOrder.deliveryPartner.name}</div>
+                        <div className="text-sm font-medium text-gray-900">{selectedOrder.assignedDeliveryManName || "Partner name"}</div>
                         <div className="flex items-center space-x-4 mt-1">
                           <div className="text-xs text-gray-500 flex items-center">
                             <MapPin className="h-3 w-3 mr-1" />
-                            {selectedOrder.deliveryPartner.distance} away
+                            {selectedOrder.distance} away
                           </div>
                           <div className="text-xs text-gray-500">
-                            ETA: {typeof selectedOrder.deliveryPartner.estimatedArrival === 'object' 
-                              ? (selectedOrder.deliveryPartner.estimatedArrival as Date).toLocaleString() 
-                              : selectedOrder.deliveryPartner.estimatedArrival}
+                            ETA: {typeof selectedOrder.estimatedArrival === 'string' 
+                              ? selectedOrder.estimatedArrival 
+                              : selectedOrder?.estimatedArrival instanceof Date 
+                                ? selectedOrder.estimatedArrival.toLocaleTimeString()
+                                : "En route"}
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="mb-6">
-                  <div className="text-sm font-medium text-gray-700 mb-2">Assign Delivery Partner</div>
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                    <div className="flex flex-col space-y-2">
-                      <button className="w-full text-left p-2 flex items-center rounded-lg hover:bg-gray-100">
-                        <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 mr-2">
-                          <User className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">Rahul Kumar</div>
-                          <div className="text-xs text-gray-500">1.2 km away</div>
-                        </div>
-                        <div className="ml-auto">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Available
-                          </span>
-                        </div>
-                      </button>
-
-                      <button className="w-full text-left p-2 flex items-center rounded-lg hover:bg-gray-100">
-                        <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 mr-2">
-                          <User className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">Priya Singh</div>
-                          <div className="text-xs text-gray-500">2.5 km away</div>
-                        </div>
-                        <div className="ml-auto">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Available
-                          </span>
-                        </div>
-                      </button>
                     </div>
                   </div>
                 </div>

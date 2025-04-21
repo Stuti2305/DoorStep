@@ -205,9 +205,8 @@ function App() {
                       <StationeryPage />
                     </StudentRoute>
                   } />
-                  <Route path="/orders" element={<Orders />} />
                   <Route path="/orders" element={<StudentRoute><Orders /></StudentRoute>} />
-                  <Route path="/tracking" element={<Tracking />} />
+                  <Route path="/tracking/:orderId" element={<StudentRoute><Tracking /></StudentRoute>} />
                   <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
                 </Routes>
               </Layout>

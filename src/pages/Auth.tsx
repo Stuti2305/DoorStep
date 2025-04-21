@@ -203,6 +203,9 @@ export default function Auth() {
       const user = auth.currentUser;
       if (user) {
         let userData = null;
+        let userType = null;
+        
+        // Check each collection for user data
         const collections = [
           { name: 'Students', typeField: 'userType' },
           { name: 'Vendors', typeField: 'userType' },
@@ -220,15 +223,19 @@ export default function Auth() {
               navigate('/delivery/dashboard');
               return;
             }
+            // For other roles, use the userType field
+            userType = userData.userType;
             break;
           }
         }
         
         if (!userData) {
-          throw new Error('User data not found');
+          console.error('User data not found in collections:', collections.map(c => c.name));
+          throw new Error('User data not found. Please try signing up again.');
         }
         
-        switch(userData.userType) {
+        // Handle navigation based on user type
+        switch(userType) {
           case 'Student':
             navigate(from);
             break;
@@ -239,6 +246,7 @@ export default function Auth() {
             navigate('/admin/dashboard');
             break;
           default:
+            console.error('Unknown user type:', userType);
             navigate('/home');
         }
       }

@@ -267,7 +267,7 @@ export default function Home() {
                         <Star className="w-4 h-4 fill-current" />
                       </div>
                     </div>
-                    <div className="text-gray-600 text-sm mb-2">{shop.cuisine}</div>
+                    <div className="text-gray-600 text-sm mb-2">{shop.address}</div>
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center space-x-1">
                         <Clock className="w-4 h-4" />

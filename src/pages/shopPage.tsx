@@ -7,6 +7,8 @@ import { ChevronLeft, Star, MapPin, Clock } from 'lucide-react';
 import { getDownloadURL, ref, listAll } from "firebase/storage";
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
+import { CartItem } from '../types/types';
 
 export default function ShopPage() {
     const { shopId } = useParams<{ shopId: string }>();
@@ -77,6 +79,31 @@ export default function ShopPage() {
             navigate('/shop/dashboard');
         }
     }, [user, shopId, navigate]);
+
+    const handleAddToCart = async (product: Product) => {
+        try {
+            if (!shopId) {
+                throw new Error('Shop ID is required');
+            }
+            
+            const cartItem: CartItem = {
+                productId: product.id,
+                shopId: shopId,
+                name: product.name,
+                price: product.price,
+                quantity: 1,
+                imageUrl: product.imageUrl,
+                shopName: shop?.name || '',
+                shopAddress: shop?.address || '',
+                shopPhone: shop?.phone || ''
+            };
+            await addToCart(cartItem);
+            toast.success('Added to cart!');
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            toast.error('Failed to add to cart');
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 relative">
@@ -175,24 +202,7 @@ export default function ShopPage() {
                                         <div className="flex items-center justify-between text-sm">
                                             <div className="font-semibold">₹{product.price}</div>
                                             <button
-                                                onClick={async () => {
-                                                    try {
-                                                        await addToCart({
-                                                            productId: product.id,
-                                                            shopId: shopId || '',
-                                                            name: product.name,
-                                                            price: product.price,
-                                                            quantity: 1,
-                                                            imageUrl: product.imageUrl,
-                                                        });
-                                                        setMessage(`${product.name} added to cart`);
-                                                        setTimeout(() => setMessage(null), 3000);
-                                                    } catch (error) {
-                                                        console.error('Error adding to cart:', error);
-                                                        setMessage('Error adding to cart');
-                                                        setTimeout(() => setMessage(null), 3000);
-                                                    }
-                                                }}
+                                                onClick={() => handleAddToCart(product)}
                                                 className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition-colors"
                                             >
                                                 Add to Cart

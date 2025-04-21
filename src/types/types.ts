@@ -58,16 +58,14 @@
   
   export interface CartItem {
     productId: string;
-    items?: Array<{
-      productId: string;
-      name: string;
-      price: number;
-    }>,
-    quantity: number;
-    price: number;
+    shopId: string;
     name: string;
+    price: number;
+    quantity: number;
     imageUrl: string;
-    shopId: string; // Ensure this is required (no question mark)
+    shopName: string;
+    shopAddress: string;
+    shopPhone: string;
   }
   
   export interface Order {

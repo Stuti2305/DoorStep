@@ -1,7 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
 
 export default function Orders() {
+  const location = useLocation();
+  const orderId = location.state?.orderId;
   const deliveryTime = 'Thu, 29th, 4:00 PM';
 
   return (
@@ -21,7 +23,7 @@ export default function Orders() {
 
         <div className="flex flex-col gap-6">
           <Link
-            to="/tracking"
+            to={`/tracking/${orderId}`}
             className="w-full py-4 bg-orange-500 text-white rounded-full text-lg font-semibold hover:bg-orange-600 transition-colors"
           >
             Track My Order

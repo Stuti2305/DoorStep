@@ -4,10 +4,11 @@ import { motion } from 'framer-motion';
 import { Shield, CreditCard } from 'lucide-react';
 import { paymentService } from '../services/paymentService';
 import { toast } from 'react-hot-toast';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
+import { deliveryService } from '../services/deliveryService';
 
 interface PaymentProps {
   orderId: string;
@@ -49,19 +50,48 @@ export default function RazorpayPayment({
       });
 
       // Save order to Firestore
-      await addDoc(collection(db, 'orders'), {
+      const orderRef = await addDoc(collection(db, 'orders'), {
         userId: user.uid,
         orderId: orderId,
         items: cartItems,
         status: 'pending',
         totalAmount: amount,
         createdAt: new Date(),
+        statusHistory: [
+          {
+            status: 'pending',
+            timestamp: new Date(),
+            notes: 'Order created'
+          }
+        ]
       });
+
+      // Assign delivery partner
+      try {
+        const assignedDeliveryMan = await deliveryService.assignDeliveryMan(orderRef.id);
+        if (!assignedDeliveryMan) {
+          console.warn('No delivery partner available at the moment');
+          // Update order status to indicate no delivery partner available
+          await updateDoc(orderRef, {
+            status: 'pending_delivery',
+            statusHistory: [
+              {
+                status: 'pending_delivery',
+                timestamp: new Date(),
+                notes: 'Waiting for delivery partner'
+              }
+            ]
+          });
+        }
+      } catch (deliveryError) {
+        console.error('Error assigning delivery partner:', deliveryError);
+        // Continue with order creation even if delivery assignment fails
+      }
 
       // Success handling
       toast.success('Payment successful!');
       onSuccess?.();
-      navigate('/orders');
+      navigate('/orders', { state: { isSuccess: true, orderId: orderRef.id } });
     } catch (error: any) {
       console.error('Payment error details:', error);
       toast.error('Payment failed: ' + (error?.message || 'Please try again.'));
@@ -85,12 +115,12 @@ export default function RazorpayPayment({
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">Delivery Fee</span>
-          <span className="font-semibold">₹10</span>
+          <span className="font-semibold">₹20</span>
         </div>
         <div className="border-t pt-2">
           <div className="flex justify-between">
             <span className="font-semibold">Total Amount</span>
-            <span className="font-semibold">₹{amount + 10}</span>
+            <span className="font-semibold">₹{amount + 20}</span>
           </div>
         </div>
       </div>
