@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../lib/firebase';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-import { User, Phone, Shield, ToggleLeft, ToggleRight, Package, Clock, CheckCircle, Settings } from 'lucide-react';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, arrayUnion } from 'firebase/firestore';
+import { User, Phone, Shield, ToggleLeft, ToggleRight, Package, Clock, CheckCircle } from 'lucide-react';
 import { Order } from '../../types/types';
+import * as firebase from 'firebase/app';
+import { FieldValue } from 'firebase/firestore';
+
+type OrderStatus = "assigned" | "pickedup" | "outfordelivery" | "delivered" | "pending" | "processing" | "cancelled";
 
 export default function DeliveryDashboard() {
   const [deliveryPartner, setDeliveryPartner] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [assignedOrders, setAssignedOrders] = useState<Order[]>([]);
   const [deliveredOrders, setDeliveredOrders] = useState<Order[]>([]);
+  const [quickViewOrderId, setQuickViewOrderId] = useState<string | null>(null);
+  const [quickViewDeliveredOrderId, setQuickViewDeliveredOrderId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,27 +35,30 @@ export default function DeliveryDashboard() {
           throw new Error('Delivery partner data not found');
         }
 
-        setDeliveryPartner(deliveryPartnerSnap.data());
+        const deliveryPartnerData = deliveryPartnerSnap.data();
+        setDeliveryPartner(deliveryPartnerData);
 
         // Fetch assigned orders
         const ordersRef = collection(db, 'orders');
         const assignedOrdersQuery = query(
           ordersRef,
-          where('deliveryPartner.del_man_id', '==', user.uid),
+          where('assignedDeliveryManId', '==', deliveryPartnerData.del_man_id),
           where('status', 'in', ['assigned', 'pickedup', 'outfordelivery']),
           orderBy('createdAt', 'desc')
         );
         const assignedOrdersSnap = await getDocs(assignedOrdersQuery);
+
         setAssignedOrders(assignedOrdersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order)));
 
         // Fetch delivered orders
         const deliveredOrdersQuery = query(
           ordersRef,
-          where('deliveryPartner.del_man_id', '==', user.uid),
+          where('assignedDeliveryManId', '==', deliveryPartnerData.del_man_id),
           where('status', '==', 'delivered'),
           orderBy('createdAt', 'desc')
         );
         const deliveredOrdersSnap = await getDocs(deliveredOrdersQuery);
+
         setDeliveredOrders(deliveredOrdersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order)));
 
       } catch (error) {
@@ -75,12 +84,42 @@ export default function DeliveryDashboard() {
         updated_at: new Date()
       });
 
-      setDeliveryPartner(prev => ({
+      setDeliveryPartner((prev: any) => ({
         ...prev,
         current_duty: newStatus
       }));
     } catch (error) {
       console.error('Error toggling availability:', error);
+    }
+  };
+
+  const toggleQuickView = (orderId: string) => {
+    setQuickViewOrderId(prev => (prev === orderId ? null : orderId));
+  };
+
+  const toggleQuickViewDelivered = (orderId: string) => {
+    setQuickViewDeliveredOrderId(prev => (prev === orderId ? null : orderId));
+  };
+
+  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus, note: string) => {
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      const timestamp = new Date();
+      await updateDoc(orderRef, {
+        status: newStatus,
+        updatedAt: timestamp,
+        statusHistory: arrayUnion({
+          notes: note,
+          status: newStatus,
+          timestamp: timestamp
+        })
+      });
+      // Update the local state to reflect the change
+      setAssignedOrders(prevOrders => prevOrders.map(order => 
+        order.id === orderId ? { ...order, status: newStatus } : order
+      ));
+    } catch (error) {
+      console.error('Error updating order status:', error);
     }
   };
 
@@ -103,13 +142,6 @@ export default function DeliveryDashboard() {
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Delivery Partner Dashboard</h1>
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate('/settings')}
-                className="p-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors"
-                title="Settings"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
               <button
                 onClick={toggleAvailability}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
@@ -170,9 +202,9 @@ export default function DeliveryDashboard() {
             <div className="space-y-4">
               {assignedOrders.map((order) => (
                 <div key={order.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start" onClick={() => toggleQuickView(order.id)}>
                     <div>
-                      <h3 className="font-medium text-gray-900">Order #{order.orderId || order.id.slice(0, 8)}</h3>
+                      <h3 className="font-medium text-gray-900">Order #{order.id}</h3>
                       <p className="text-sm text-gray-500">
                         {new Date(order.createdAt).toLocaleString()}
                       </p>
@@ -195,6 +227,38 @@ export default function DeliveryDashboard() {
                       </p>
                     )}
                   </div>
+                  {quickViewOrderId === order.id && (
+                    <div className="mt-4 bg-gray-100 p-4 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-2">Items</h4>
+                      <ul className="space-y-2">
+                        {order.items.map((item, index) => (
+                          <li key={index} className="flex justify-between items-center text-sm text-gray-700">
+                            <span className="w-1/2">{item.name}</span>
+                            <span className="w-1/4 text-center">₹{item.price}</span>
+                            <span className="w-1/4 text-right">Qty: {item.quantity}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-4">
+                        {order.status === 'assigned' && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'outfordelivery' as OrderStatus, 'Order Marked as Out for Delivery')}
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg mr-2"
+                          >
+                            Mark as Out for Delivery
+                          </button>
+                        )}
+                        {order.status === 'outfordelivery' && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'delivered' as OrderStatus, 'Delivery completed')}
+                            className="bg-green-500 text-white px-4 py-2 rounded-lg"
+                          >
+                            Mark as Delivered
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -210,9 +274,9 @@ export default function DeliveryDashboard() {
             <div className="space-y-4">
               {deliveredOrders.map((order) => (
                 <div key={order.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start" onClick={() => toggleQuickViewDelivered(order.id)}>
                     <div>
-                      <h3 className="font-medium text-gray-900">Order #{order.orderId || order.id.slice(0, 8)}</h3>
+                      <h3 className="font-medium text-gray-900">Order #{order.id}</h3>
                       <p className="text-sm text-gray-500">
                         {new Date(order.createdAt).toLocaleString()}
                       </p>
@@ -231,6 +295,20 @@ export default function DeliveryDashboard() {
                       </p>
                     )}
                   </div>
+                  {quickViewDeliveredOrderId === order.id && (
+                    <div className="mt-4 bg-gray-100 p-4 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-2">Items</h4>
+                      <ul className="space-y-2">
+                        {order.items.map((item, index) => (
+                          <li key={index} className="flex justify-between items-center text-sm text-gray-700">
+                            <span className="w-1/2">{item.name}</span>
+                            <span className="w-1/4 text-center">₹{item.price}</span>
+                            <span className="w-1/4 text-right">Qty: {item.quantity}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
