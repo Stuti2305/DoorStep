@@ -42,6 +42,9 @@ import ShopProfile from './pages/shop/Profile';
 import CreateShop from './pages/shop/createShop';
 import ShopPage from './pages/shopPage';
 import DeliveryDashboard from './pages/delivery/Dashboard';
+import DeliverySettings from './pages/delivery/Settings';
+import DeliveryProfile from './pages/delivery/Profile';
+
 // Protected Route Component
 function ProtectedRoute({
   children,
@@ -208,6 +211,8 @@ function App() {
                   <Route path="/orders" element={<StudentRoute><Orders /></StudentRoute>} />
                   <Route path="/tracking/:orderId" element={<StudentRoute><Tracking /></StudentRoute>} />
                   <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
+                  <Route path="/delivery/settings" element={<DeliverySettings />} />
+                  <Route path="/delivery/profile" element={<DeliveryProfile />} />
                 </Routes>
               </Layout>
               <Toaster />

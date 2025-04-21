@@ -1,69 +1,140 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home as HomeIcon, Heart, Bell, Plus, Trash2 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../lib/firebase';
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where, getDoc } from 'firebase/firestore';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+interface Address {
+  id: string;
+  hostel: string;
+  room: string;
+  phoneNumber: string;
+  studentName: string;
+  userId: string;
+  isDefault: boolean;
+  createdAt: Date;
+}
 
 export default function DeliveryAddress() {
   const navigate = useNavigate();
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      name: 'Hostel 1',
-      address: 'Room 123',
-      city: 'Jaipur',
-      state: 'Rajasthan',
-      pincode: '300042',
-      phone: '+91 9876543210',
-      isDefault: true
-    },
-    {
-      id: 2,
-      name: 'Hostel 2',
-      address: 'Room 420',
-      city: 'Jaipur',
-      state: 'Rajasthan',
-      pincode: '300042',
-      phone: '+91 9876543211',
-      isDefault: false
-    }
-  ]);
-
+  const { user } = useAuth();
+  const [addresses, setAddresses] = useState<Address[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAddress, setNewAddress] = useState({
-    name: '',
-    address: '',
-    city: '',
-    state: '',
-    pincode: '',
-    phone: '',
+    hostel: '',
+    room: '',
+    phoneNumber: '',
     isDefault: false
   });
 
-  const handleAddAddress = () => {
-    if (newAddress.isDefault) {
-      setAddresses(addresses.map(addr => ({ ...addr, isDefault: false })));
+  useEffect(() => {
+    fetchAddresses();
+  }, [user]);
+
+  const fetchAddresses = async () => {
+    if (!user) return;
+    
+    try {
+      const q = query(collection(db, 'Delivery_address'), where('userId', '==', user.uid));
+      const querySnapshot = await getDocs(q);
+      const addressesData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Address[];
+      setAddresses(addressesData);
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
+      toast.error('Failed to fetch addresses');
     }
-    setAddresses([...addresses, { ...newAddress, id: addresses.length + 1 }]);
-    setShowAddForm(false);
-    setNewAddress({
-      name: '',
-      address: '',
-      city: '',
-      state: '',
-      pincode: '',
-      phone: '',
-      isDefault: false
-    });
   };
 
-  const handleRemoveAddress = (id: number) => {
-    setAddresses(addresses.filter(addr => addr.id !== id));
+  const handleAddAddress = async () => {
+    if (!user) {
+      toast.error('Please login to add address');
+      return;
+    }
+
+    if (!newAddress.hostel || !newAddress.room || !newAddress.phoneNumber) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+
+    try {
+      // Get student data to get student name
+      const studentDoc = await getDoc(doc(db, 'Students', user.uid));
+      if (!studentDoc.exists()) {
+        throw new Error('Student data not found');
+      }
+      const studentData = studentDoc.data();
+
+      // If setting as default, update other addresses
+      if (newAddress.isDefault) {
+        const q = query(collection(db, 'Delivery_address'), where('userId', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+        querySnapshot.docs.forEach(async (doc) => {
+          await updateDoc(doc.ref, { isDefault: false });
+        });
+      }
+
+      // Add new address
+      await addDoc(collection(db, 'Delivery_address'), {
+        hostel: newAddress.hostel,
+        room: newAddress.room,
+        phoneNumber: newAddress.phoneNumber,
+        studentName: studentData.stuname,
+        userId: user.uid,
+        isDefault: newAddress.isDefault,
+        createdAt: new Date()
+      });
+
+      toast.success('Address added successfully');
+      setShowAddForm(false);
+      setNewAddress({
+        hostel: '',
+        room: '',
+        phoneNumber: '',
+        isDefault: false
+      });
+      fetchAddresses();
+    } catch (error) {
+      console.error('Error adding address:', error);
+      toast.error('Failed to add address');
+    }
   };
 
-  const handleSetDefault = (id: number) => {
-    setAddresses(addresses.map(addr => ({
-      ...addr,
-      isDefault: addr.id === id
-    })));
+  const handleRemoveAddress = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'Delivery_address', id));
+      toast.success('Address removed successfully');
+      fetchAddresses();
+    } catch (error) {
+      console.error('Error removing address:', error);
+      toast.error('Failed to remove address');
+    }
+  };
+
+  const handleSetDefault = async (id: string) => {
+    if (!user) return;
+    
+    try {
+      // Update all addresses to non-default
+      const q = query(collection(db, 'Delivery_address'), where('userId', '==', user.uid));
+      const querySnapshot = await getDocs(q);
+      querySnapshot.docs.forEach(async (doc) => {
+        await updateDoc(doc.ref, { isDefault: false });
+      });
+
+      // Set selected address as default
+      await updateDoc(doc(db, 'Delivery_address', id), { isDefault: true });
+      toast.success('Default address updated');
+      fetchAddresses();
+    } catch (error) {
+      console.error('Error setting default address:', error);
+      toast.error('Failed to update default address');
+    }
   };
 
   return (
@@ -87,49 +158,25 @@ export default function DeliveryAddress() {
             <div className="space-y-4">
               <input
                 type="text"
-                placeholder="Address Name (e.g., Home, Office)"
+                placeholder="Hostel Name"
                 className="w-full p-2 border rounded-lg"
-                value={newAddress.name}
-                onChange={(e) => setNewAddress({ ...newAddress, name: e.target.value })}
+                value={newAddress.hostel}
+                onChange={(e) => setNewAddress({ ...newAddress, hostel: e.target.value })}
               />
-              <textarea
-                placeholder="Full Address"
+              <input
+                type="text"
+                placeholder="Room Number"
                 className="w-full p-2 border rounded-lg"
-                value={newAddress.address}
-                onChange={(e) => setNewAddress({ ...newAddress, address: e.target.value })}
+                value={newAddress.room}
+                onChange={(e) => setNewAddress({ ...newAddress, room: e.target.value })}
               />
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="City"
-                  className="w-full p-2 border rounded-lg"
-                  value={newAddress.city}
-                  onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                />
-                <input
-                  type="text"
-                  placeholder="State"
-                  className="w-full p-2 border rounded-lg"
-                  value={newAddress.state}
-                  onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Pincode"
-                  className="w-full p-2 border rounded-lg"
-                  value={newAddress.pincode}
-                  onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
-                />
-                <input
-                  type="text"
-                  placeholder="Phone Number"
-                  className="w-full p-2 border rounded-lg"
-                  value={newAddress.phone}
-                  onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
-                />
-              </div>
+              <input
+                type="text"
+                placeholder="Phone Number"
+                className="w-full p-2 border rounded-lg"
+                value={newAddress.phoneNumber}
+                onChange={(e) => setNewAddress({ ...newAddress, phoneNumber: e.target.value })}
+              />
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -164,18 +211,15 @@ export default function DeliveryAddress() {
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{address.name}</h3>
+                    <h3 className="font-semibold">{address.hostel}</h3>
                     {address.isDefault && (
                       <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
                         Default
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-600 mt-2">{address.address}</p>
-                  <p className="text-gray-600">
-                    {address.city}, {address.state} - {address.pincode}
-                  </p>
-                  <p className="text-gray-600 mt-2">Phone: {address.phone}</p>
+                  <p className="text-gray-600 mt-2">Room: {address.room}</p>
+                  <p className="text-gray-600">Phone: {address.phoneNumber}</p>
                 </div>
                 <div className="flex gap-2">
                   {!address.isDefault && (
@@ -198,8 +242,6 @@ export default function DeliveryAddress() {
           ))}
         </div>
       </div>
-
-      
     </div>
   );
 } 
