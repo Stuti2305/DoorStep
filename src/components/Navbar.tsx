@@ -1,25 +1,10 @@
 import { Link } from 'react-router-dom';
-import { User, LogOut } from 'lucide-react';
+import { ShoppingCart, User, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { useEffect, useState } from 'react';
+import { UserRole } from '../types';
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
-  const [isDeliveryPartner, setIsDeliveryPartner] = useState(false);
-
-  useEffect(() => {
-    const checkDeliveryPartner = async () => {
-      if (user) {
-        const deliveryPartnerRef = doc(db, 'delivery_man', user.uid);
-        const deliveryPartnerSnap = await getDoc(deliveryPartnerRef);
-        setIsDeliveryPartner(deliveryPartnerSnap.exists());
-      }
-    };
-
-    checkDeliveryPartner();
-  }, [user]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 h-navbar bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg z-50">
@@ -32,21 +17,18 @@ export default function Navbar() {
           <div className="flex items-center space-x-4">
             {user ? (
               <>
-                {isDeliveryPartner ? (
-                  <Link
-                    to="/delivery/settings"
-                    className="p-2 hover:bg-blue-500 rounded-full transition-colors"
-                  >
-                    <User className="w-6 h-6 text-white" />
-                  </Link>
-                ) : (
-                  <Link
-                    to="/profile"
-                    className="p-2 hover:bg-blue-500 rounded-full transition-colors"
-                  >
-                    <User className="w-6 h-6 text-white" />
-                  </Link>
-                )}
+                <Link
+                  to="/cart"
+                  className="p-2 hover:bg-blue-500 rounded-full transition-colors"
+                >
+                  <ShoppingCart className="w-6 h-6 text-white" />
+                </Link>
+                <Link
+                  to={user.role === 'delivery' ? '/delivery/settings' : '/profile'}
+                  className="p-2 hover:bg-blue-500 rounded-full transition-colors"
+                >
+                  <User className="w-6 h-6 text-white" />
+                </Link>
                 <button
                   onClick={() => signOut()}
                   className="p-2 hover:bg-blue-500 rounded-full transition-colors"

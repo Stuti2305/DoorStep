@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../lib/firebase';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, arrayUnion } from 'firebase/firestore';
 import { User, Phone, Shield, ToggleLeft, ToggleRight, Package, Clock, CheckCircle } from 'lucide-react';
 import { Order } from '../../types/types';
+import * as firebase from 'firebase/app';
+import { FieldValue } from 'firebase/firestore';
+
+type OrderStatus = "assigned" | "pickedup" | "outfordelivery" | "delivered" | "pending" | "processing" | "cancelled";
 
 export default function DeliveryDashboard() {
   const [deliveryPartner, setDeliveryPartner] = useState<any>(null);
@@ -39,23 +43,45 @@ export default function DeliveryDashboard() {
         const assignedOrdersQuery = query(
           ordersRef,
           where('assignedDeliveryManId', '==', deliveryPartnerData.del_man_id),
-          where('status', 'in', ['assigned', 'pickedup', 'outfordelivery']),
+          where('status', 'in', ['assigned', 'outfordelivery']),
           orderBy('createdAt', 'desc')
         );
         const assignedOrdersSnap = await getDocs(assignedOrdersQuery);
 
-        setAssignedOrders(assignedOrdersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order)));
+        const assignedOrders = assignedOrdersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+        setAssignedOrders(assignedOrders);
 
-        // Fetch delivered orders
-        const deliveredOrdersQuery = query(
-          ordersRef,
-          where('assignedDeliveryManId', '==', deliveryPartnerData.del_man_id),
-          where('status', '==', 'delivered'),
-          orderBy('createdAt', 'desc')
-        );
-        const deliveredOrdersSnap = await getDocs(deliveredOrdersQuery);
+        // Fetch delivered orders only if not already updated locally
+        if (deliveredOrders.length === 0) {
+          const deliveredOrdersQuery = query(
+            ordersRef,
+            where('assignedDeliveryManId', '==', deliveryPartnerData.del_man_id),
+            where('status', '==', 'delivered'),
+            orderBy('createdAt', 'desc')
+          );
+          const deliveredOrdersSnap = await getDocs(deliveredOrdersQuery);
 
-        setDeliveredOrders(deliveredOrdersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order)));
+          setDeliveredOrders(deliveredOrdersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order)));
+        }
+
+        // Update current_duty based on order status
+        if (assignedOrders.length > 0) {
+          await updateDoc(deliveryPartnerRef, {
+            current_duty: 'Busy'
+          });
+          setDeliveryPartner((prev: any) => ({
+            ...prev,
+            current_duty: 'Busy'
+          }));
+        } else if (assignedOrders.length === 0 && deliveryPartnerData.current_duty === 'Busy') {
+          await updateDoc(deliveryPartnerRef, {
+            current_duty: 'Available'
+          });
+          setDeliveryPartner((prev: any) => ({
+            ...prev,
+            current_duty: 'Available'
+          }));
+        }
 
       } catch (error) {
         console.error('Error fetching delivery partner data:', error);
@@ -65,7 +91,7 @@ export default function DeliveryDashboard() {
     };
 
     fetchDeliveryPartnerData();
-  }, [navigate]);
+  }, [navigate, deliveredOrders.length]);
 
   const toggleAvailability = async () => {
     try {
@@ -97,6 +123,62 @@ export default function DeliveryDashboard() {
     setQuickViewDeliveredOrderId(prev => (prev === orderId ? null : orderId));
   };
 
+  useEffect(() => {
+    console.log("Assigned Orders:", assignedOrders);
+    console.log("Delivered Orders:", deliveredOrders);
+  }, [assignedOrders, deliveredOrders]);
+
+  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus, note: string) => {
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      const timestamp = new Date();
+      await updateDoc(orderRef, {
+        status: newStatus,
+        updatedAt: timestamp,
+        statusHistory: arrayUnion({
+          notes: note,
+          status: newStatus,
+          timestamp: timestamp
+        })
+      });
+
+      // Refetch assigned orders from the database
+      const ordersRef = collection(db, 'orders');
+      const assignedOrdersQuery = query(
+        ordersRef,
+        where('assignedDeliveryManId', '==', deliveryPartner?.del_man_id),
+        where('status', 'in', ['assigned', 'outfordelivery']),
+        orderBy('createdAt', 'desc')
+      );
+      const assignedOrdersSnap = await getDocs(assignedOrdersQuery);
+      setAssignedOrders(assignedOrdersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order)));
+
+      // Fetch delivered orders if the status is 'delivered'
+      if (newStatus === 'delivered') {
+        const deliveredOrdersQuery = query(
+          ordersRef,
+          where('assignedDeliveryManId', '==', deliveryPartner?.del_man_id),
+          where('status', '==', 'delivered'),
+          orderBy('createdAt', 'desc')
+        );
+        const deliveredOrdersSnap = await getDocs(deliveredOrdersQuery);
+        setDeliveredOrders(deliveredOrdersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order)));
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error);
+    }
+  };
+
+  // Use useEffect to update current_duty when assignedOrders changes
+  useEffect(() => {
+    if (assignedOrders.length === 0 && deliveryPartner?.current_duty === 'Busy') {
+      setDeliveryPartner((prev: any) => ({
+        ...prev,
+        current_duty: 'Available'
+      }));
+    }
+  }, [assignedOrders, deliveryPartner]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -118,6 +200,7 @@ export default function DeliveryDashboard() {
             <div className="flex items-center gap-4">
               <button
                 onClick={toggleAvailability}
+                disabled={deliveryPartner?.current_duty === 'Busy'}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
                   deliveryPartner?.current_duty === 'Available'
                     ? 'bg-green-100 text-green-800'
@@ -213,6 +296,24 @@ export default function DeliveryDashboard() {
                           </li>
                         ))}
                       </ul>
+                      <div className="mt-4">
+                        {order.status === 'assigned' && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'outfordelivery' as OrderStatus, 'Order Marked as Out for Delivery')}
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg mr-2"
+                          >
+                            Mark as Out for Delivery
+                          </button>
+                        )}
+                        {order.status === 'outfordelivery' && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'delivered' as OrderStatus, 'Delivery completed')}
+                            className="bg-green-500 text-white px-4 py-2 rounded-lg"
+                          >
+                            Mark as Delivered
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
