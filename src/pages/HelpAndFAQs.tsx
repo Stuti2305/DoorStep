@@ -80,7 +80,7 @@ export default function HelpAndFAQs() {
           {/* Left Column - Search and Categories */}
           <div className="lg:w-1/2">
             {/* Search Bar */}
-            <div className="mb-6 relative">
+            {/* <div className="mb-6 relative">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <Search className="w-5 h-5 text-gray-400" />
               </div>
@@ -91,7 +91,7 @@ export default function HelpAndFAQs() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
               />
-            </div>
+            </div> */}
 
             {/* FAQ Categories */}
             <div className="grid grid-cols-2 gap-4 mb-8">

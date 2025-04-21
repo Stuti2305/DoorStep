@@ -34,25 +34,25 @@ export default function Settings() {
       action: () => setNotifications(!notifications),
       value: notifications ? 'Enabled' : 'Disabled'
     },
-    {
-      icon: <Globe className="w-6 h-6" />,
-      title: 'Language',
-      description: 'Change app language',
-      action: () => setLanguage(language === 'English' ? 'Hindi' : 'English'),
-      value: language
-    },
-    {
-      icon: <Lock className="w-6 h-6" />,
-      title: 'Privacy & Security',
-      description: 'Manage your privacy settings',
-      action: () => navigate('/privacy')
-    },
-    {
-      icon: <Shield className="w-6 h-6" />,
-      title: 'Account Security',
-      description: 'Change password and security settings',
-      action: () => navigate('/security')
-    },
+    // {
+    //   icon: <Globe className="w-6 h-6" />,
+    //   title: 'Language',
+    //   description: 'Change app language',
+    //   action: () => setLanguage(language === 'English' ? 'Hindi' : 'English'),
+    //   value: language
+    // },
+    // {
+    //   icon: <Lock className="w-6 h-6" />,
+    //   title: 'Privacy & Security',
+    //   description: 'Manage your privacy settings',
+    //   action: () => navigate('/privacy')
+    // },
+    // {
+    //   icon: <Shield className="w-6 h-6" />,
+    //   title: 'Account Security',
+    //   description: 'Change password and security settings',
+    //   action: () => navigate('/security')
+    // },
     {
       icon: <HelpCircle className="w-6 h-6" />,
       title: 'Help & Support',
