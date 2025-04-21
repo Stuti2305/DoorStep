@@ -7,6 +7,17 @@ import { db } from '../lib/firebase';
 import { useDebounce } from '../hooks/useDebounce';
 import {Shop, Category} from '../types/types'
 
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  shopId: string;
+  shopName: string;
+}
+
 // interface Category {
 //   id: string;
 //   name: string;
@@ -33,7 +44,9 @@ export default function Home() {
   const [location, setLocation] = useState('Banasthali Campus');
   const [loading, setLoading] = useState(true);
   const [shops, setShops] = useState<Shop[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const categories: Category[] = [
@@ -99,39 +112,62 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    const fetchShops = async () => {
+    const fetchData = async () => {
       try {
+        setLoading(true);
+        // Fetch shops
         const shopsQuery = query(collection(db, 'shops'));
-        const snapshot = await getDocs(shopsQuery);
-        const fetchedShops = snapshot.docs.map((doc) => ({
+        const shopsSnapshot = await getDocs(shopsQuery);
+        const fetchedShops = shopsSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as Shop[];
         setShops(fetchedShops);
         setFilteredShops(fetchedShops);
+
+        // Fetch products
+        const productsQuery = query(collection(db, 'products'));
+        const productsSnapshot = await getDocs(productsQuery);
+        const fetchedProducts = productsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Product[];
+        setProducts(fetchedProducts);
+        setFilteredProducts(fetchedProducts);
       } catch (error) {
-        console.error('Error fetching shops:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchShops();
+    fetchData();
   }, []);
 
   useEffect(() => {
     if (!debouncedSearchQuery.trim()) {
       setFilteredShops(shops);
+      setFilteredProducts(products);
       return;
     }
 
     const query = debouncedSearchQuery.toLowerCase().trim();
-    const filtered = shops.filter((shop) =>
+    
+    // Filter shops
+    const filteredShopsResult = shops.filter((shop) =>
       shop.name.toLowerCase().includes(query) ||
-      shop.description.toLowerCase().includes(query) 
+      shop.description?.toLowerCase().includes(query)
     );
-    setFilteredShops(filtered);
-  }, [debouncedSearchQuery, shops]);
+    setFilteredShops(filteredShopsResult);
+
+    // Filter products
+    const filteredProductsResult = products.filter((product) =>
+      product.name.toLowerCase().includes(query) ||
+      product.description.toLowerCase().includes(query) ||
+      product.category.toLowerCase().includes(query)
+    );
+    setFilteredProducts(filteredProductsResult);
+  }, [debouncedSearchQuery, shops, products]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -238,52 +274,85 @@ export default function Home() {
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
           </div>
-        ) : filteredShops.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredShops.map((shop) => (
-              <Link key={shop.id} to={`/shops/${shop.id}`}>
-                <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-                  <div className="relative">
-                    <img src={shop.image} alt={shop.name} className="w-full h-48 object-cover" />
-
-                    {shop.promoted && (
-                      <div className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 py-1 rounded-full text-sm">
-                        Promoted
-                      </div>
-                    )}
-                    {shop.offers && shop.offers.length > 0 && (
-                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                        <div className="text-white text-sm font-medium">
-                          {shop.offers[0]}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-lg font-semibold">{shop.name}</h3>
-                      <div className="flex items-center space-x-1 bg-green-500 text-white px-2 py-1 rounded">
-                        <span>{shop.rating}</span>
-                        <Star className="w-4 h-4 fill-current" />
-                      </div>
-                    </div>
-                    <div className="text-gray-600 text-sm mb-2">{shop.address}</div>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <div className="flex items-center space-x-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{shop.deliveryTime}</span>
-                      </div>
-                      <div>₹{shop.priceForTwo} for two</div>
-                    </div>
-                  </div>
-                </motion.div>
-              </Link>
-            ))}
-          </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-64">
-            <div className="text-gray-500 text-lg mb-2">No shops found</div>
-          </div>
+          <>
+            {filteredShops.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-xl font-semibold mb-4">Shops</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredShops.map((shop) => (
+                    <Link key={shop.id} to={`/shops/${shop.id}`}>
+                      <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                        <div className="relative">
+                          <img src={shop.image} alt={shop.name} className="w-full h-48 object-cover" />
+                          {shop.promoted && (
+                            <div className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 py-1 rounded-full text-sm">
+                              Promoted
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-lg font-semibold">{shop.name}</h3>
+                            <div className="flex items-center space-x-1 bg-green-500 text-white px-2 py-1 rounded">
+                              <span>{shop.rating}</span>
+                              <Star className="w-4 h-4 fill-current" />
+                            </div>
+                          </div>
+                          <div className="text-gray-600 text-sm mb-2">{shop.address}</div>
+                          <div className="flex items-center justify-between text-sm text-gray-500">
+                            <div className="flex items-center space-x-1">
+                              <Clock className="w-4 h-4" />
+                              <span>{shop.deliveryTime}</span>
+                            </div>
+                            <div>₹{shop.priceForTwo} for two</div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {filteredProducts.length > 0 && (
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Products</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredProducts.map((product) => (
+                    <Link key={product.id} to={`/shops/${product.shopId}/products/${product.id}`}>
+                      <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                        <div className="relative">
+                          <img src={product.image} alt={product.name} className="w-full h-48 object-cover" />
+                        </div>
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-lg font-semibold">{product.name}</h3>
+                            <div className="text-green-600 font-semibold">
+                              ₹{product.price}
+                            </div>
+                          </div>
+                          <div className="text-gray-600 text-sm mb-2">{product.description}</div>
+                          <div className="flex items-center justify-between text-sm text-gray-500">
+                            <div className="flex items-center space-x-1">
+                              <span>{product.category}</span>
+                            </div>
+                            <div>From: {product.shopName}</div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {filteredShops.length === 0 && filteredProducts.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-64">
+                <div className="text-gray-500 text-lg mb-2">No results found</div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

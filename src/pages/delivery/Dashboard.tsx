@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../lib/firebase';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, arrayUnion } from 'firebase/firestore';
 import { User, Phone, Shield, ToggleLeft, ToggleRight, Package, Clock, CheckCircle } from 'lucide-react';
 import { Order } from '../../types/types';
+import * as firebase from 'firebase/app';
+import { FieldValue } from 'firebase/firestore';
+
+type OrderStatus = "assigned" | "pickedup" | "outfordelivery" | "delivered" | "pending" | "processing" | "cancelled";
 
 export default function DeliveryDashboard() {
   const [deliveryPartner, setDeliveryPartner] = useState<any>(null);
@@ -95,6 +99,28 @@ export default function DeliveryDashboard() {
 
   const toggleQuickViewDelivered = (orderId: string) => {
     setQuickViewDeliveredOrderId(prev => (prev === orderId ? null : orderId));
+  };
+
+  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus, note: string) => {
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      const timestamp = new Date();
+      await updateDoc(orderRef, {
+        status: newStatus,
+        updatedAt: timestamp,
+        statusHistory: arrayUnion({
+          notes: note,
+          status: newStatus,
+          timestamp: timestamp
+        })
+      });
+      // Update the local state to reflect the change
+      setAssignedOrders(prevOrders => prevOrders.map(order => 
+        order.id === orderId ? { ...order, status: newStatus } : order
+      ));
+    } catch (error) {
+      console.error('Error updating order status:', error);
+    }
   };
 
   if (loading) {
@@ -213,6 +239,24 @@ export default function DeliveryDashboard() {
                           </li>
                         ))}
                       </ul>
+                      <div className="mt-4">
+                        {order.status === 'assigned' && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'outfordelivery' as OrderStatus, 'Order Marked as Out for Delivery')}
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg mr-2"
+                          >
+                            Mark as Out for Delivery
+                          </button>
+                        )}
+                        {order.status === 'outfordelivery' && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'delivered' as OrderStatus, 'Delivery completed')}
+                            className="bg-green-500 text-white px-4 py-2 rounded-lg"
+                          >
+                            Mark as Delivered
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
