@@ -24,9 +24,21 @@ interface DashboardStats {
   deliveredOrders: number;
   cancelledOrders: number;
   totalRevenue: number;
+  last30DaysRevenue: number;
   activeUsers: number;
+  activeStudents: number;
   activeDeliveryAgents: number;
   totalVendors: number;
+  availableDeliveryMen: number;
+  busyDeliveryMen: number;
+  todayOrders: {
+    total: number;
+    pending: number;
+    outForDelivery: number;
+    delivered: number;
+  };
+  totalShops: number;
+  totalStudents: number;
 }
 
 interface User {
@@ -77,9 +89,21 @@ export default function AdminDashboard() {
     deliveredOrders: 0,
     cancelledOrders: 0,
     totalRevenue: 0,
+    last30DaysRevenue: 0,
     activeUsers: 0,
+    activeStudents: 0,
     activeDeliveryAgents: 0,
-    totalVendors: 0
+    totalVendors: 0,
+    availableDeliveryMen: 0,
+    busyDeliveryMen: 0,
+    todayOrders: {
+      total: 0,
+      pending: 0,
+      outForDelivery: 0,
+      delivered: 0
+    },
+    totalShops: 0,
+    totalStudents: 0
   });
   const [users, setUsers] = useState<User[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -90,6 +114,15 @@ export default function AdminDashboard() {
     // Fetch dashboard statistics
     const fetchStats = async () => {
       try {
+        // Get today's date at midnight
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Get date 30 days ago
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        thirtyDaysAgo.setHours(0, 0, 0, 0);
+
         // Fetch orders
         const ordersQuery = query(collection(db, 'orders'));
         const ordersSnapshot = await getDocs(ordersQuery);
@@ -102,6 +135,34 @@ export default function AdminDashboard() {
         const cancelledOrders = orders.filter(order => order.status === 'cancelled').length;
         const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
 
+        // Calculate last 30 days revenue
+        const last30DaysOrders = orders.filter(order => {
+          const orderDate = order.createdAt?.toDate();
+          return orderDate && orderDate >= thirtyDaysAgo;
+        });
+        const last30DaysRevenue = last30DaysOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+
+        // Calculate active students (those who placed orders in last 30 days)
+        const activeStudentIds = new Set(
+          last30DaysOrders
+            .filter(order => order.userId) // Filter out orders without userId
+            .map(order => order.userId)
+        );
+        const activeStudents = activeStudentIds.size;
+
+        // Calculate today's orders
+        const todayOrders = orders.filter(order => {
+          const orderDate = order.createdAt?.toDate();
+          return orderDate && orderDate >= today;
+        });
+
+        const todayOrdersStats = {
+          total: todayOrders.length,
+          pending: todayOrders.filter(order => order.status === 'pending').length,
+          outForDelivery: todayOrders.filter(order => order.status === 'outfordelivery').length,
+          delivered: todayOrders.filter(order => order.status === 'delivered').length
+        };
+
         // Fetch users
         const usersQuery = query(collection(db, 'users'));
         const usersSnapshot = await getDocs(usersQuery);
@@ -112,15 +173,41 @@ export default function AdminDashboard() {
         const activeDeliveryAgents = firestoreUsers.filter(user => user.role === 'delivery' && user.status === 'active').length;
         const totalVendors = firestoreUsers.filter(user => user.role === 'vendor').length;
 
+        // Fetch delivery men
+        const deliveryMenQuery = query(collection(db, 'delivery_man'));
+        const deliveryMenSnapshot = await getDocs(deliveryMenQuery);
+        const deliveryMen = deliveryMenSnapshot.docs.map(doc => doc.data());
+        
+        // Calculate delivery men stats
+        const availableDeliveryMen = deliveryMen.filter(man => man.current_duty === 'Available').length;
+        const busyDeliveryMen = deliveryMen.filter(man => man.current_duty === 'Busy').length;
+
+        // Fetch shops
+        const shopsQuery = query(collection(db, 'shops'));
+        const shopsSnapshot = await getDocs(shopsQuery);
+        const totalShops = shopsSnapshot.size;
+
+        // Fetch students
+        const studentsQuery = query(collection(db, 'Students'));
+        const studentsSnapshot = await getDocs(studentsQuery);
+        const totalStudents = studentsSnapshot.size;
+
         setStats({
           totalOrders,
           pendingOrders,
           deliveredOrders,
           cancelledOrders,
           totalRevenue,
+          last30DaysRevenue,
           activeUsers,
+          activeStudents,
           activeDeliveryAgents,
-          totalVendors
+          totalVendors,
+          availableDeliveryMen,
+          busyDeliveryMen,
+          todayOrders: todayOrdersStats,
+          totalShops,
+          totalStudents
         });
 
         // Set users, vendors, and delivery agents with proper typing
@@ -184,7 +271,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Today's Orders</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.totalOrders}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.todayOrders.total}</p>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">
                 <Package className="w-6 h-6 text-blue-600" />
@@ -193,15 +280,15 @@ export default function AdminDashboard() {
             <div className="mt-4 grid grid-cols-3 gap-4">
               <div>
                 <p className="text-xs text-gray-500">Pending</p>
-                <p className="text-sm font-medium text-amber-600">{stats.pendingOrders}</p>
+                <p className="text-sm font-medium text-amber-600">{stats.todayOrders.pending}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Out for Delivery</p>
+                <p className="text-sm font-medium text-blue-600">{stats.todayOrders.outForDelivery}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500">Delivered</p>
-                <p className="text-sm font-medium text-emerald-600">{stats.deliveredOrders}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Cancelled</p>
-                <p className="text-sm font-medium text-rose-600">{stats.cancelledOrders}</p>
+                <p className="text-sm font-medium text-emerald-600">{stats.todayOrders.delivered}</p>
               </div>
             </div>
           </div>
@@ -210,7 +297,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Revenue</p>
-                <p className="text-2xl font-semibold text-gray-900">${stats.totalRevenue.toFixed(2)}</p>
+                <p className="text-2xl font-semibold text-gray-900">₹{stats.last30DaysRevenue.toFixed(2)}</p>
               </div>
               <div className="p-3 bg-emerald-100 rounded-lg">
                 <DollarSign className="w-6 h-6 text-emerald-600" />
@@ -224,19 +311,19 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Active Users</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.activeUsers}</p>
+                <p className="text-sm font-medium text-gray-500">Active Students</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.activeStudents}</p>
               </div>
               <div className="p-3 bg-purple-100 rounded-lg">
                 <Users className="w-6 h-6 text-purple-600" />
               </div>
             </div>
             <div className="mt-4">
-              <p className="text-xs text-gray-500">Currently online</p>
+              <p className="text-xs text-gray-500">Placed orders in last 30 days</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          {/* <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Delivery Agents</p>
@@ -249,6 +336,28 @@ export default function AdminDashboard() {
             <div className="mt-4">
               <p className="text-xs text-gray-500">Active now</p>
             </div>
+          </div> */}
+
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Delivery Men Status</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.availableDeliveryMen + stats.busyDeliveryMen}</p>
+              </div>
+              <div className="p-3 bg-pink-100 rounded-lg">
+                <Truck className="w-6 h-6 text-pink-600" />
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-gray-500">Available</p>
+                <p className="text-sm font-medium text-emerald-600">{stats.availableDeliveryMen}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Busy</p>
+                <p className="text-sm font-medium text-amber-600">{stats.busyDeliveryMen}</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -256,12 +365,12 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* User Management */}
           <div className="lg:col-span-1 bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
+            {/* <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">User Management</h2>
               <Link to="/admin/users" className="text-sm text-blue-600 hover:text-blue-800">
                 View all
               </Link>
-            </div>
+            </div> */}
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
@@ -269,16 +378,18 @@ export default function AdminDashboard() {
                     <GraduationCap className="w-5 h-5 text-blue-600 mr-2" />
                     <span className="font-medium">Students</span>
                   </div>
-                  <span className="text-sm text-gray-500">{users.filter(u => u.role === 'student').length}</span>
+                  <span className="text-sm text-gray-500">{stats.totalStudents}</span>
                 </div>
                 <div className="flex space-x-2">
-                  <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">View</button>
-                  <button className="text-xs bg-amber-100 text-amber-600 px-2 py-1 rounded">Block</button>
-                  <button className="text-xs bg-rose-100 text-rose-600 px-2 py-1 rounded">Delete</button>
+                  <Link to="/admin/student-details" className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200">
+                    View Details
+                  </Link>
+                  {/* <button className="text-xs bg-amber-100 text-amber-600 px-2 py-1 rounded">Block</button>
+                  <button className="text-xs bg-rose-100 text-rose-600 px-2 py-1 rounded">Delete</button> */}
                 </div>
               </div>
 
-              <div className="p-4 bg-gray-50 rounded-lg">
+              {/* <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     <Truck className="w-5 h-5 text-emerald-600 mr-2" />
@@ -291,9 +402,9 @@ export default function AdminDashboard() {
                   <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">Assign Orders</button>
                   <button className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded">Track Earnings</button>
                 </div>
-              </div>
+              </div> */}
 
-              <div className="p-4 bg-gray-50 rounded-lg">
+              {/* <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     <Store className="w-5 h-5 text-amber-600 mr-2" />
@@ -305,34 +416,35 @@ export default function AdminDashboard() {
                   <button className="text-xs bg-amber-100 text-amber-600 px-2 py-1 rounded">Manage Access</button>
                   <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">Permissions</button>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
 
           {/* Vendor Management */}
           <div className="lg:col-span-1 bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
+            {/* <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Vendor Management</h2>
               <Link to="/admin/vendors" className="text-sm text-blue-600 hover:text-blue-800">
                 View all
               </Link>
-            </div>
+            </div> */}
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     <Building2 className="w-5 h-5 text-blue-600 mr-2" />
-                    <span className="font-medium">Vendor Profiles</span>
+                    <span className="font-medium">Total Shops</span>
                   </div>
-                  <span className="text-sm text-gray-500">{vendors.length}</span>
+                  <span className="text-sm text-gray-500">{stats.totalShops}</span>
                 </div>
                 <div className="flex space-x-2">
-                  <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">View</button>
-                  <button className="text-xs bg-amber-100 text-amber-600 px-2 py-1 rounded">Edit</button>
+                  <Link to="/admin/vendors" className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200">
+                    View Vendors
+                  </Link>
                 </div>
               </div>
 
-              <div className="p-4 bg-gray-50 rounded-lg">
+              {/* <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     <ShoppingBag className="w-5 h-5 text-emerald-600 mr-2" />
@@ -344,20 +456,35 @@ export default function AdminDashboard() {
                   <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">View Orders</button>
                   <button className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded">Categories</button>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
 
           {/* Delivery Management */}
           <div className="lg:col-span-1 bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
+            {/* <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Delivery Management</h2>
               <Link to="/admin/delivery" className="text-sm text-blue-600 hover:text-blue-800">
                 View all
               </Link>
-            </div>
+            </div> */}
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <Truck className="w-5 h-5 text-blue-600 mr-2" />
+                    <span className="font-medium">Total Delivery Men</span>
+                  </div>
+                  <span className="text-sm text-gray-500">{stats.availableDeliveryMen + stats.busyDeliveryMen}</span>
+                </div>
+                <div className="flex space-x-2">
+                  <Link to="/admin/delivery-men" className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200">
+                    View Details
+                  </Link>
+                </div>
+              </div>
+
+              {/* <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     <Truck className="w-5 h-5 text-blue-600 mr-2" />
@@ -368,9 +495,9 @@ export default function AdminDashboard() {
                   <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">Manual Assign</button>
                   <button className="text-xs bg-emerald-100 text-emerald-600 px-2 py-1 rounded">Auto Assign</button>
                 </div>
-              </div>
+              </div> */}
 
-              <div className="p-4 bg-gray-50 rounded-lg">
+              {/* <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     <User className="w-5 h-5 text-amber-600 mr-2" />
@@ -383,7 +510,7 @@ export default function AdminDashboard() {
                   <button className="text-xs bg-emerald-100 text-emerald-600 px-2 py-1 rounded">Approve</button>
                   <button className="text-xs bg-rose-100 text-rose-600 px-2 py-1 rounded">Reject</button>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

@@ -16,7 +16,7 @@
 //     createdAt: string;
 //     updatedAt: string;
 //   }
-  export type UserRole = 'admin' | 'shopkeeper' | 'student';
+  export type UserRole = 'admin' | 'shopkeeper' | 'student' | 'delivery';
 
   export interface User {
     uid: string;
