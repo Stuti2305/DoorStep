@@ -47,6 +47,10 @@ import DeliveryProfile from './pages/delivery/Profile';
 import Vendors from './pages/admin/Vendors';
 import DeliveryMen from './pages/admin/DeliveryMen';
 import StudentDetails from './pages/admin/StudentDetails';
+import VendorProducts from './pages/admin/VendorProducts';
+import CategoryProducts from './pages/admin/CategoryProducts';
+import CategoryManagement from './pages/admin/CategoryManagement';
+import AdminProfile from './pages/admin/AdminProfile';
 
 // Protected Route Component
 function ProtectedRoute({
@@ -147,8 +151,19 @@ function App() {
                             <AdminDashboard />
                           </AdminRoute>
                         } />
-                        <Route path="categories" element={<AdminCategories />} />
+                        <Route path="profile" element={
+                          <AdminRoute>
+                            <AdminProfile />
+                          </AdminRoute>
+                        } />
+                        <Route path="categories" element={
+                          <AdminRoute>
+                            <CategoryManagement />
+                          </AdminRoute>
+                        } />
+                        <Route path="category/:categoryId" element={<CategoryProducts />} />
                         <Route path="vendors" element={<Vendors />} />
+                        <Route path="vendor-products/:vendorId" element={<VendorProducts />} />
                         <Route path="delivery-men" element={<DeliveryMen />} />
                         <Route path="student-details" element={<StudentDetails />} />
                         {/* Add more admin routes */}

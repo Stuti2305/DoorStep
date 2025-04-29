@@ -24,7 +24,7 @@ export default function Navbar() {
                   <ShoppingCart className="w-6 h-6 text-white" />
                 </Link>
                 <Link
-                  to={user.role === 'delivery' ? '/delivery/settings' : '/profile'}
+                  to={user.role === 'admin' ? '/admin/profile' : user.role === 'delivery' ? '/delivery/settings' : '/profile'}
                   className="p-2 hover:bg-blue-500 rounded-full transition-colors"
                 >
                   <User className="w-6 h-6 text-white" />
