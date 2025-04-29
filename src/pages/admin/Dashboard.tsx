@@ -39,6 +39,14 @@ interface DashboardStats {
   };
   totalShops: number;
   totalStudents: number;
+  categories: Category[];
+}
+
+interface Category {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
 }
 
 interface User {
@@ -103,7 +111,8 @@ export default function AdminDashboard() {
       delivered: 0
     },
     totalShops: 0,
-    totalStudents: 0
+    totalStudents: 0,
+    categories: []
   });
   const [users, setUsers] = useState<User[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -192,6 +201,14 @@ export default function AdminDashboard() {
         const studentsSnapshot = await getDocs(studentsQuery);
         const totalStudents = studentsSnapshot.size;
 
+        // Fetch categories
+        const categoriesQuery = query(collection(db, 'categories'));
+        const categoriesSnapshot = await getDocs(categoriesQuery);
+        const categories = categoriesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Category[];
+
         setStats({
           totalOrders,
           pendingOrders,
@@ -207,7 +224,8 @@ export default function AdminDashboard() {
           busyDeliveryMen,
           todayOrders: todayOrdersStats,
           totalShops,
-          totalStudents
+          totalStudents,
+          categories
         });
 
         // Set users, vendors, and delivery agents with proper typing
@@ -512,6 +530,43 @@ export default function AdminDashboard() {
                 </div>
               </div> */}
             </div>
+          </div>
+        </div>
+
+        {/* Categories Section */}
+        <div className="mt-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Product Categories</h2>
+            <Link
+              to="/admin/categories"
+              className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
+            >
+              <PlusCircle className="w-5 h-5" />
+              Manage Categories
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {stats.categories.map((category) => (
+              <Link
+                key={category.id}
+                to={`/admin/category/${category.id}`}
+                className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 rounded-lg overflow-hidden">
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">{category.name}</h3>
+                    <p className="text-sm text-gray-500 mt-1">{category.description}</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </div>
