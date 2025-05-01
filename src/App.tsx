@@ -51,6 +51,7 @@ import VendorProducts from './pages/admin/VendorProducts';
 import CategoryProducts from './pages/admin/CategoryProducts';
 import CategoryManagement from './pages/admin/CategoryManagement';
 import AdminProfile from './pages/admin/AdminProfile';
+import PendingApproval from './pages/PendingApproval';
 
 // Protected Route Component
 function ProtectedRoute({
@@ -234,6 +235,7 @@ function App() {
                   <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
                   <Route path="/delivery/settings" element={<DeliverySettings />} />
                   <Route path="/delivery/profile" element={<DeliveryProfile />} />
+                  <Route path="/pending-approval" element={<PendingApproval />} />
                 </Routes>
               </Layout>
               <Toaster />
