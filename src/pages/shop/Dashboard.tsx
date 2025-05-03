@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { db } from '../../lib/firebase';
+import { db, auth } from '../../lib/firebase';
 import {
   collection, query, where, getDocs, orderBy,
   limit, doc, onSnapshot, Timestamp,
@@ -638,6 +638,19 @@ export default function ShopDashboard() {
       pendingOrders: stats.pendingOrders
     };
   }, [stats]);
+
+  useEffect(() => {
+    const checkApproval = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const vendorDoc = await getDoc(doc(db, 'Vendors', user.uid));
+        if (!vendorDoc.exists()) {
+          navigate('/pending-approval');
+        }
+      }
+    };
+    checkApproval();
+  }, [navigate]);
 
   if (loading) {
     return (

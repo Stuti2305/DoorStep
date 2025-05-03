@@ -6,9 +6,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types/index';
 import { auth, db } from '../lib/firebase';
 import { createShopProfile } from '../services/shopService';
-import { getDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getDoc, doc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
+
 
 interface FormData {
   fullName: string;
@@ -104,12 +106,9 @@ export default function Auth() {
         setError('Please enter your shop name');
         return;
       }
-    }
 
-    try {
-      setLoading(true);
-      if (isSignUp) {
-        // Create user with Firebase Auth
+      // Ensure selectedRole is not null before calling signUp
+      if (selectedRole) {
         const userCredential = await signUp(formData.email, formData.password, selectedRole);
         const user = userCredential.user;
         
@@ -129,9 +128,21 @@ export default function Auth() {
             });
             break;
             
+          case 'admin':
+            await setDoc(doc(db, 'Admins', user.uid), {
+              name: formData.fullName,
+              email: formData.email,
+              phone_number: formData.mobileNumber,
+              admin_id: formData.userId,
+              userType: 'Admin',
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            });
+            break;
+
           case 'shopkeeper':
             // First create vendor profile
-            await setDoc(doc(db, 'Vendors', user.uid), {
+            await setDoc(doc(db, 'onboarding_requests', user.uid), {
               vendorName: formData.fullName,
               vendorEmail: formData.email,
               vendorPhone: formData.mobileNumber,
@@ -157,7 +168,7 @@ export default function Auth() {
                   priceForTwo: 0,
                   promoted: false,
                   offers: [],
-                  isActive: true
+                  isActive: false
                 });
                 toast.success('Shop profile created successfully!');
               } catch (shopError) {
@@ -166,75 +177,65 @@ export default function Auth() {
               }
             }
             break;
-            
+
           case 'delivery':
-            await setDoc(doc(db, 'delivery_man', user.uid), {
+            // Write delivery-specific data to onboarding_requests
+            await setDoc(doc(db, 'onboarding_requests', user.uid), {
               name: formData.fullName,
               email: formData.email,
               phone: formData.mobileNumber,
               driving_license_no: formData.drivingLicenseNo || '',
               del_man_id: user.uid,
+              userType: 'Delivery',
               current_duty: 'Available',
-              admin_control: 'active',
+              admin_control: 'inactive',
               created_at: serverTimestamp(),
               updated_at: serverTimestamp()
-            });
-            break;
-            
-          case 'admin':
-            await setDoc(doc(db, 'Admins', user.uid), {
-              name: formData.fullName,
-              email: formData.email,
-              phone_number: formData.mobileNumber,
-              admin_id: formData.userId,
-              userType: 'Admin',
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp()
             });
             break;
         }
 
         toast.success('Account created successfully!');
-      } else {
-        await signIn(formData.email, formData.password);
+        navigate('/pending-approval'); // Redirect to pending approval page
+      }
+    } else {
+      await signIn(formData.email, formData.password);
+    }
+    
+    // Redirect based on role
+    const user = auth.currentUser;
+    if (user) {
+      let userData = null;
+      let userType = null;
+      
+      // Check each collection for user data
+      const collections = [
+        { name: 'Students', typeField: 'userType' },
+        { name: 'Admins', typeField: 'userType' },
+        { name: 'onboarding_requests', typeField: 'userType' }, // Include onboarding_requests for vendors and delivery
+        { name: 'Vendors', typeField: 'userType' },
+        { name: 'delivery_man', typeField: 'userType' }
+      ];
+      
+      for (const collection of collections) {
+        const docRef = doc(db, collection.name, user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          userData = docSnap.data();
+          userType = userData[collection.typeField] || 'Unknown'; // Default to 'Unknown' if undefined
+          console.log('Retrieved user data:', userData); // Debugging statement
+          console.log('Determined user type:', userType); // Debugging statement
+          break;
+        }
       }
       
-      // Redirect based on role
-      const user = auth.currentUser;
-      if (user) {
-        let userData = null;
-        let userType = null;
-        
-        // Check each collection for user data
-        const collections = [
-          { name: 'Students', typeField: 'userType' },
-          { name: 'Vendors', typeField: 'userType' },
-          { name: 'Admins', typeField: 'userType' },
-          { name: 'delivery_man', typeField: null }
-        ];
-        
-        for (const collection of collections) {
-          const docRef = doc(db, collection.name, user.uid);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            userData = docSnap.data();
-            // For delivery_man, we know it's a delivery partner
-            if (collection.name === 'delivery_man') {
-              navigate('/delivery/dashboard');
-              return;
-            }
-            // For other roles, use the userType field
-            userType = userData.userType;
-            break;
-          }
-        }
-        
-        if (!userData) {
-          console.error('User data not found in collections:', collections.map(c => c.name));
-          throw new Error('User data not found. Please try signing up again.');
-        }
-        
-        // Handle navigation based on user type
+      if (!userData) {
+        console.error('User data not found in collections:', collections.map(c => c.name));
+        throw new Error('User data not found. Please try signing up again.');
+      }
+      
+      // Handle navigation based on user type
+      if (userType) {
         switch(userType) {
           case 'Student':
             navigate(from);
@@ -242,21 +243,20 @@ export default function Auth() {
           case 'Vendor':
             navigate('/shop/dashboard');
             break;
+          case 'Delivery':
+            navigate('/delivery/dashboard');
+            break;
           case 'Admin':
             navigate('/admin/dashboard');
             break;
           default:
-            console.error('Unknown user type:', userType);
-            navigate('/home');
+            console.error('Unknown or null user type:', userType);
+            navigate('/home'); // Redirect to a default page if userType is null or unknown
         }
+      } else {
+        console.error('User type is null or undefined');
+        navigate('/home'); // Redirect to a default page if userType is null
       }
-    } catch (error) {
-      console.error('Authentication error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -270,6 +270,31 @@ export default function Auth() {
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role);
   };
+
+  // Function to check if user is approved
+  async function checkApproval(userId: string, role: UserRole) {
+    let isApproved = false;
+    if (role === 'shopkeeper') {
+      const vendorDoc = await getDoc(doc(db, 'Vendors', userId));
+      isApproved = vendorDoc.exists();
+    } else if (role === 'delivery') {
+      const deliveryDoc = await getDoc(doc(db, 'delivery_man', userId));
+      isApproved = deliveryDoc.exists();
+    }
+    return isApproved;
+  }
+
+  // Example usage in a dashboard component
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user && selectedRole) {
+      checkApproval(user.uid, selectedRole).then(isApproved => {
+        if (!isApproved) {
+          navigate('/pending-approval');
+        }
+      });
+    }
+  }, [selectedRole]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-800 via-purple-700 to-pink-600 flex items-center justify-center p-4">

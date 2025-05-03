@@ -1,4 +1,4 @@
-import { doc, setDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 interface ShopProfile {
@@ -17,14 +17,14 @@ interface ShopProfile {
 
 export const createShopProfile = async (profile: ShopProfile) => {
   if (!profile.ownerId) throw new Error('Owner ID is required');
-  await setDoc(doc(db, 'shops', profile.ownerId), {
+  await addDoc(collection(db, 'onboarding_requests'), {
     ...profile,
     rating: 0,
     deliveryTime: '30-40 min',
     image: '/images/shops/default.jpg',
     promoted: false,
     offers: [],
-    isActive: true,
+    isActive: false,
     createdAt: new Date()
   });
 }; 

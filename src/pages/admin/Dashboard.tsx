@@ -5,7 +5,7 @@ import { db } from '../../lib/firebase';
 import {
   collection, query, where, getDocs, orderBy,
   limit, doc, onSnapshot, Timestamp,
-  startAfter, startAt, limitToLast, documentId, getDoc
+  startAfter, startAt, limitToLast, documentId, getDoc, setDoc, deleteDoc
 } from 'firebase/firestore';
 import {
   Users, Package, TrendingUp, DollarSign,
@@ -89,6 +89,15 @@ interface FirestoreUser {
   earnings?: number;
 }
 
+interface PendingRequest {
+  id: string;
+  vendorName?: string;
+  shopName?: string;
+  name?: string;
+  userType: string;
+  ownerId?: string;
+}
+
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
@@ -118,6 +127,8 @@ export default function AdminDashboard() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [deliveryAgents, setDeliveryAgents] = useState<DeliveryAgent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingVendors, setPendingVendors] = useState<PendingRequest[]>([]);
+  const [pendingDeliveryMen, setPendingDeliveryMen] = useState<PendingRequest[]>([]);
 
   useEffect(() => {
     // Fetch dashboard statistics
@@ -269,6 +280,94 @@ export default function AdminDashboard() {
 
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    const fetchPendingRequests = async () => {
+      try {
+        const vendorQuery = query(collection(db, 'onboarding_requests'), where('userType', '==', 'Vendor'));
+        const vendorSnapshot = await getDocs(vendorQuery);
+        const vendors = await Promise.all(vendorSnapshot.docs.map(async (doc) => {
+          const vendorData = doc.data();
+          console.log('Vendor Name:', vendorData.vendorName);  // Debugging log for vendor name
+          const shopQuery = query(collection(db, 'onboarding_requests'), where('ownerId', '==', doc.id));
+          const shopSnapshot = await getDocs(shopQuery);
+          const shopName = shopSnapshot.docs.length > 0 ? shopSnapshot.docs[0].data().name : 'No Shop';
+          return { id: doc.id, vendorName: vendorData.vendorName, shopName, userType: vendorData.userType, ownerId: vendorData.ownerId };
+        }));
+        console.log('Fetched Vendors with Shops:', vendors);
+        setPendingVendors(vendors as PendingRequest[]);
+
+        const deliveryQuery = query(collection(db, 'onboarding_requests'), where('userType', '==', 'Delivery'));
+        const deliverySnapshot = await getDocs(deliveryQuery);
+        const deliveryMen = deliverySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name, userType: doc.data().userType }));
+        console.log('Fetched Delivery Men:', deliveryMen);
+        setPendingDeliveryMen(deliveryMen);
+      } catch (error) {
+        console.error('Error fetching pending requests:', error);
+      }
+    };
+
+    fetchPendingRequests();
+  }, []);
+
+  // Additional rendering check
+  useEffect(() => {
+    console.log('Pending Vendors State:', pendingVendors);
+    console.log('Pending Delivery Men State:', pendingDeliveryMen);
+  }, [pendingVendors, pendingDeliveryMen]);
+
+  const approveVendor = async (vendor: PendingRequest) => {
+    try {
+      // Fetch the vendor document again from the onboarding_requests collection
+      const vendorDocRef = doc(db, 'onboarding_requests', vendor.id);
+      const vendorDocSnap = await getDoc(vendorDocRef);
+      if (!vendorDocSnap.exists()) {
+        console.error('Vendor document not found in onboarding_requests');
+        return;
+      }
+      const vendorData = vendorDocSnap.data();
+      console.log('Adding to Vendors:', vendorData); // Log vendor data
+      const vendorDoc = doc(db, 'Vendors', vendor.id);
+      await setDoc(vendorDoc, vendorData); // Move the entire vendor document as is
+
+      // Fetch and move the shop document
+      const shopQuery = query(collection(db, 'onboarding_requests'), where('ownerId', '==', vendor.id));
+      const shopSnapshot = await getDocs(shopQuery);
+      shopSnapshot.forEach(async (shopDoc) => {
+        const shopData = shopDoc.data();
+        console.log('Adding to Shops:', shopData); // Log shop data
+        const shopDocRef = doc(db, 'shops', shopData.ownerId); // Use shopDoc.id for the document ID
+        await setDoc(shopDocRef, shopData);
+        await deleteDoc(shopDoc.ref);
+      });
+
+      await deleteDoc(vendorDocRef);
+      setPendingVendors(pendingVendors.filter(v => v.id !== vendor.id));
+    } catch (error) {
+      console.error('Error approving vendor:', error);
+    }
+  };
+
+  const approveDeliveryMan = async (deliveryMan: PendingRequest) => {
+    try {
+      // Fetch the delivery man document again from the onboarding_requests collection
+      const deliveryDocRef = doc(db, 'onboarding_requests', deliveryMan.id);
+      const deliveryDocSnap = await getDoc(deliveryDocRef);
+      if (!deliveryDocSnap.exists()) {
+        console.error('Delivery man document not found in onboarding_requests');
+        return;
+      }
+      const deliveryData = deliveryDocSnap.data();
+      console.log('Adding to Delivery Man:', deliveryData); // Log delivery man data
+      const deliveryDoc = doc(db, 'delivery_man', deliveryMan.id);
+      await setDoc(deliveryDoc, deliveryData); // Move the entire delivery man document as is
+
+      await deleteDoc(deliveryDocRef);
+      setPendingDeliveryMen(pendingDeliveryMen.filter(d => d.id !== deliveryMan.id));
+    } catch (error) {
+      console.error('Error approving delivery man:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -567,6 +666,35 @@ export default function AdminDashboard() {
                 </div>
               </Link>
             ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Vendor Requests</h2>
+            <ul className="divide-y divide-gray-200">
+              {pendingVendors.map(vendor => (
+                <li key={vendor.id} className="flex justify-between items-center py-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">{vendor.vendorName}</p>
+                    <p className="text-xs text-gray-500">Shop: {vendor.shopName}</p>
+                  </div>
+                  <button onClick={() => approveVendor(vendor)} className="text-xs bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">Approve</button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Delivery Men Requests</h2>
+            <ul className="divide-y divide-gray-200">
+              {pendingDeliveryMen.map(deliveryMan => (
+                <li key={deliveryMan.id} className="flex justify-between items-center py-4">
+                  <p className="text-sm font-medium text-gray-700">{deliveryMan.name}</p>
+                  <button onClick={() => approveDeliveryMan(deliveryMan)} className="text-xs bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">Approve</button>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>

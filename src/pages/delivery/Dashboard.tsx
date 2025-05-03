@@ -179,6 +179,19 @@ export default function DeliveryDashboard() {
     }
   }, [assignedOrders, deliveryPartner]);
 
+  useEffect(() => {
+    const checkApproval = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const deliveryDoc = await getDoc(doc(db, 'delivery_man', user.uid));
+        if (!deliveryDoc.exists()) {
+          navigate('/pending-approval');
+        }
+      }
+    };
+    checkApproval();
+  }, [navigate]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
