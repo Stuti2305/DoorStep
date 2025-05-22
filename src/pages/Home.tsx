@@ -144,7 +144,7 @@ export default function Home() {
     // Filter shops
     const filteredShops = shops.filter((shop) =>
       shop.name.toLowerCase().includes(query) ||
-      shop.description?.toLowerCase().includes(query)
+      (shop.description?.toLowerCase() || '').includes(query)
     );
     setFilteredShops(filteredShops);
 
@@ -316,7 +316,7 @@ export default function Home() {
                     <Link key={product.id} to={`/products/${product.id}`}>
                       <motion.div whileHover={{ y: -5 }} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                         <div className="relative">
-                          <img src={product.image} alt={product.name} className="w-full h-48 object-cover" />
+                          <img src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover" />
                         </div>
                         <div className="p-4">
                           <div className="flex items-center justify-between mb-2">
