@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../lib/firebase';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, arrayUnion, addDoc } from 'firebase/firestore';
 import { User, Phone, Shield, ToggleLeft, ToggleRight, Package, Clock, CheckCircle } from 'lucide-react';
 import { Order } from '../../types/types';
 import * as firebase from 'firebase/app';
@@ -16,6 +16,7 @@ export default function DeliveryDashboard() {
   const [deliveredOrders, setDeliveredOrders] = useState<Order[]>([]);
   const [quickViewOrderId, setQuickViewOrderId] = useState<string | null>(null);
   const [quickViewDeliveredOrderId, setQuickViewDeliveredOrderId] = useState<string | null>(null);
+  const [enteredOTP, setEnteredOTP] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -128,8 +129,38 @@ export default function DeliveryDashboard() {
     console.log("Delivered Orders:", deliveredOrders);
   }, [assignedOrders, deliveredOrders]);
 
+  // Function to generate a random 4-digit OTP
+  const generateOTP = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  };
+
+  // Function to verify OTP
+  const verifyOTP = async (orderId: string, enteredOTP: string) => {
+    try {
+      const otpRef = doc(db, 'delivery_otp', orderId);
+      const otpSnap = await getDoc(otpRef);
+      if (otpSnap.exists()) {
+        const { otp } = otpSnap.data();
+        return otp === enteredOTP;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      return false;
+    }
+  };
+
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus, note: string) => {
     try {
+      if (newStatus === 'outfordelivery') {
+        // Generate and store OTP
+        const otp = generateOTP();
+        await addDoc(collection(db, 'delivery_otp'), {
+          orderId,
+          otp,
+          createdAt: new Date()
+        });
+      }
       const orderRef = doc(db, 'orders', orderId);
       const timestamp = new Date();
       await updateDoc(orderRef, {
@@ -319,12 +350,28 @@ export default function DeliveryDashboard() {
                           </button>
                         )}
                         {order.status === 'outfordelivery' && (
-                          <button
-                            onClick={() => updateOrderStatus(order.id, 'delivered' as OrderStatus, 'Delivery completed')}
-                            className="bg-green-500 text-white px-4 py-2 rounded-lg"
-                          >
-                            Mark as Delivered
-                          </button>
+                          <div>
+                            <input
+                              type="text"
+                              placeholder="Enter OTP"
+                              value={enteredOTP}
+                              onChange={(e) => setEnteredOTP(e.target.value)}
+                              className="border rounded px-2 py-1 mr-2"
+                            />
+                            <button
+                              onClick={async () => {
+                                const isVerified = await verifyOTP(order.id, enteredOTP);
+                                if (isVerified) {
+                                  updateOrderStatus(order.id, 'delivered' as OrderStatus, 'Delivery completed');
+                                } else {
+                                  alert('Incorrect OTP');
+                                }
+                              }}
+                              className="bg-green-500 text-white px-4 py-2 rounded-lg"
+                            >
+                              Mark as Delivered
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
