@@ -103,8 +103,8 @@ export default function ContactUs() {
             </div>
           </div>
 
-          {/* Right Column - Contact Form */}
-          {/* <div className="lg:w-1/2">
+           
+          { <div className="lg:w-1/2">
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 sticky top-4">
               <div className="flex items-center mb-6">
                 <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 mr-3">
@@ -171,7 +171,7 @@ export default function ContactUs() {
                 </button>
               </form>
             </div>
-          </div> */}
+          </div> }
         </div>
       </div>
 

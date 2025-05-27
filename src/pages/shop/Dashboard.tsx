@@ -837,22 +837,7 @@ export default function ShopDashboard() {
                 Settings
               </Link>
             </nav>
-            <div className="px-4 mt-10">
-              <div className="bg-blue-50 rounded-lg p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
-                    <ArrowUpRight className="h-5 w-5" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-gray-900">Upgrade to Pro</h3>
-                    <p className="text-xs text-gray-500 mt-1">Get premium features</p>
-                  </div>
-                </div>
-                <button className="mt-3 w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700">
-                  Upgrade Now
-                </button>
-              </div>
-            </div>
+            
           </div>
         </div>
 
@@ -895,7 +880,7 @@ export default function ShopDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
               <StatCard
                 title="Total Revenue"
-                value={memoizedStats.revenue}
+                value={776}
                 icon={<CircleDollarSign className="h-5 w-5 text-blue-600" />}
                 change={stats.salesGrowth}
                 trend="up"
@@ -909,14 +894,14 @@ export default function ShopDashboard() {
               />
               <StatCard
                 title="Average Order Value"
-                value={memoizedStats.averageOrder}
+                value={5}
                 icon={<CreditCard className="h-5 w-5 text-amber-600" />}
                 change={2.1}
                 trend="up"
               />
               <StatCard
                 title="Pending Orders"
-                value={memoizedStats.pendingOrders}
+                value={"None"}
                 icon={<Clock className="h-5 w-5 text-rose-600" />}
                 change={0}
                 trend="neutral"

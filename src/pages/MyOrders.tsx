@@ -96,11 +96,11 @@ export default function MyOrders() {
             {orders.map(order => (
               <div key={order.id} className="bg-white rounded-xl shadow p-6 hover:shadow-md transition-shadow">
                 <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-                  <img
+                  {/* <img
                     src={`data:image/jpeg;base64,${order.imageURL}`}
                     alt={`Order ${order.orderId}`}
                     className="w-32 h-32 object-cover rounded-lg border"
-                  />
+                  /> */}
                   <div className="flex-1 w-full">
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex items-center gap-2">
