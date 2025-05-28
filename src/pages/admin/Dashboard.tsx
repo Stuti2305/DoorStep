@@ -8,7 +8,7 @@ import {
   startAfter, startAt, limitToLast, documentId, getDoc, setDoc, deleteDoc
 } from 'firebase/firestore';
 import {
-  Users, Package, TrendingUp, DollarSign,
+  Users, Package, TrendingUp, IndianRupee,
   Calendar, CheckCircle, Clock, ChevronRight,
   PlusCircle, Settings, Bell, Menu, Search, User,
   AlertTriangle, ChevronDown, Truck, Store, X, LogOut,
@@ -417,7 +417,7 @@ export default function AdminDashboard() {
                 <p className="text-2xl font-semibold text-gray-900">₹{stats.last30DaysRevenue.toFixed(2)}</p>
               </div>
               <div className="p-3 bg-emerald-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-emerald-600" />
+                <IndianRupee className="w-6 h-6 text-emerald-600" />
               </div>
             </div>
             <div className="mt-4">

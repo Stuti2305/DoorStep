@@ -2,10 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../lib/firebase';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, arrayUnion } from 'firebase/firestore';
-import { 
-  User, Phone, Shield, ToggleLeft, ToggleRight, Package, Clock, CheckCircle, MapPin, 
-  Box, Calendar, DollarSign, TrendingUp, ArrowRight, ChevronDown, ChevronUp, Truck
-} from 'lucide-react';
+import { User, Phone, Shield, ToggleLeft, ToggleRight, Package, Clock, CheckCircle } from 'lucide-react';
 import { Order } from '../../types/types';
 import * as firebase from 'firebase/app';
 import { FieldValue } from 'firebase/firestore';
@@ -19,6 +16,7 @@ export default function DeliveryDashboard() {
   const [deliveredOrders, setDeliveredOrders] = useState<Order[]>([]);
   const [quickViewOrderId, setQuickViewOrderId] = useState<string | null>(null);
   const [quickViewDeliveredOrderId, setQuickViewDeliveredOrderId] = useState<string | null>(null);
+  const [enteredOTP, setEnteredOTP] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -131,8 +129,38 @@ export default function DeliveryDashboard() {
     console.log("Delivered Orders:", deliveredOrders);
   }, [assignedOrders, deliveredOrders]);
 
+  // Function to generate a random 4-digit OTP
+  const generateOTP = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  };
+
+  // Function to verify OTP
+  const verifyOTP = async (orderId: string, enteredOTP: string) => {
+    try {
+      const otpRef = doc(db, 'delivery_otp', orderId);
+      const otpSnap = await getDoc(otpRef);
+      if (otpSnap.exists()) {
+        const { otp } = otpSnap.data();
+        return otp === enteredOTP;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      return false;
+    }
+  };
+
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus, note: string) => {
     try {
+      if (newStatus === 'outfordelivery') {
+        // Generate and store OTP
+        const otp = generateOTP();
+        await addDoc(collection(db, 'delivery_otp'), {
+          orderId,
+          otp,
+          createdAt: new Date()
+        });
+      }
       const orderRef = doc(db, 'orders', orderId);
       const timestamp = new Date();
       await updateDoc(orderRef, {
@@ -410,76 +438,56 @@ export default function DeliveryDashboard() {
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="mt-3 flex items-center text-sm text-gray-600">
-                      <MapPin className="w-4 h-4 text-gray-400 mr-1" />
-                      {order.deliveryAddress ? 
-                        `${order.deliveryAddress.hostel}, Room ${order.deliveryAddress.room}` : 
-                        'Delivery address not specified'
-                      }
-                    </div>
-                    
-                    <div className="mt-2 flex justify-end">
-                      <button 
-                        onClick={() => toggleQuickView(order.id)}
-                        className="text-blue-600 text-sm font-medium flex items-center hover:text-blue-800"
-                      >
-                        {quickViewOrderId === order.id ? (
-                          <>Hide Details <ChevronUp className="ml-1 w-4 h-4" /></>
-                        ) : (
-                          <>View Details <ChevronDown className="ml-1 w-4 h-4" /></>
-                        )}
-                      </button>
-                    </div>
-                    
-                    {quickViewOrderId === order.id && (
-                      <div className="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <h4 className="font-medium text-gray-900 mb-3 flex items-center">
-                          <Box className="w-4 h-4 mr-2 text-blue-500" />
-                          Order Items
-                        </h4>
-                        <ul className="space-y-2 mb-4">
-                          {order.items.map((item, index) => (
-                            <li key={index} className="flex justify-between items-center text-sm bg-white p-2 rounded border border-gray-100">
-                              <span className="font-medium text-gray-800">{item.name}</span>
-                              <div className="flex items-center gap-4">
-                                <span className="px-2 py-1 bg-gray-100 rounded text-gray-600">
-                                  Qty: {item.quantity}
-                                </span>
-                                <span className="font-medium text-gray-900">₹{item.price}</span>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                        
-                        <div className="flex justify-between border-t border-blue-200 pt-3 mb-4">
-                          <span className="font-medium text-gray-700">Total Amount</span>
-                          <span className="font-bold text-blue-600">₹{order.totalAmount}</span>
-                        </div>
-                        
-                        <div className="flex justify-end gap-3">
-                          {order.status === 'assigned' && (
-                            <button
-                              onClick={() => updateOrderStatus(order.id, 'outfordelivery' as OrderStatus, 'Order Marked as Out for Delivery')}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
-                            >
-                              <Truck className="w-4 h-4 mr-2" />
-                              Mark as Out for Delivery
-                            </button>
-                          )}
-                          {order.status === 'outfordelivery' && (
-                            <button
-                              onClick={() => updateOrderStatus(order.id, 'delivered' as OrderStatus, 'Delivery completed')}
-                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
-                            >
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Mark as Delivered
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      order.status === 'assigned' ? 'bg-blue-100 text-blue-800' :
+                      order.status === 'pickedup' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-purple-100 text-purple-800'
+                    }`}>
+                      {order.status}
+                    </span>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600">
+                      Total Amount: ₹{order.totalAmount}
+                    </p>
+                    {order.deliveryAddress && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        Delivery to: {order.deliveryAddress.hostel}, Room {order.deliveryAddress.room}
+                      </p>
                     )}
                   </div>
+                  {quickViewOrderId === order.id && (
+                    <div className="mt-4 bg-gray-100 p-4 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-2">Items</h4>
+                      <ul className="space-y-2">
+                        {order.items.map((item, index) => (
+                          <li key={index} className="flex justify-between items-center text-sm text-gray-700">
+                            <span className="w-1/2">{item.name}</span>
+                            <span className="w-1/4 text-center">₹{item.price}</span>
+                            <span className="w-1/4 text-right">Qty: {item.quantity}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-4">
+                        {order.status === 'assigned' && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'outfordelivery' as OrderStatus, 'Order Marked as Out for Delivery')}
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg mr-2"
+                          >
+                            Mark as Out for Delivery
+                          </button>
+                        )}
+                        {order.status === 'outfordelivery' && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'delivered' as OrderStatus, 'Delivery completed')}
+                            className="bg-green-500 text-white px-4 py-2 rounded-lg"
+                          >
+                            Mark as Delivered
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
