@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,7 +9,7 @@ import {
   startAfter, startAt, limitToLast, documentId, getDoc, setDoc, deleteDoc
 } from 'firebase/firestore';
 import {
-  Users, Package, TrendingUp, IndianRupee,
+  Users, Package, TrendingUp, DollarSign,
   Calendar, CheckCircle, Clock, ChevronRight,
   PlusCircle, Settings, Bell, Menu, Search, User,
   AlertTriangle, ChevronDown, Truck, Store, X, LogOut,
@@ -417,7 +418,7 @@ export default function AdminDashboard() {
                 <p className="text-2xl font-semibold text-gray-900">₹{stats.last30DaysRevenue.toFixed(2)}</p>
               </div>
               <div className="p-3 bg-emerald-100 rounded-lg">
-                <IndianRupee className="w-6 h-6 text-emerald-600" />
+                <DollarSign className="w-6 h-6 text-emerald-600" />
               </div>
             </div>
             <div className="mt-4">
@@ -440,20 +441,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Delivery Agents</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.activeDeliveryAgents}</p>
-              </div>
-              <div className="p-3 bg-amber-100 rounded-lg">
-                <Truck className="w-6 h-6 text-amber-600" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <p className="text-xs text-gray-500">Active now</p>
-            </div>
-          </div> */}
 
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
@@ -482,12 +469,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* User Management */}
           <div className="lg:col-span-1 bg-white rounded-xl shadow-sm p-6">
-            {/* <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">User Management</h2>
-              <Link to="/admin/users" className="text-sm text-blue-600 hover:text-blue-800">
-                View all
-              </Link>
-            </div> */}
+
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
@@ -506,45 +488,13 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center">
-                    <Truck className="w-5 h-5 text-emerald-600 mr-2" />
-                    <span className="font-medium">Delivery Agents</span>
-                  </div>
-                  <span className="text-sm text-gray-500">{deliveryAgents.length}</span>
-                </div>
-                <div className="flex space-x-2">
-                  <button className="text-xs bg-emerald-100 text-emerald-600 px-2 py-1 rounded">Verify</button>
-                  <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">Assign Orders</button>
-                  <button className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded">Track Earnings</button>
-                </div>
-              </div> */}
 
-              {/* <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center">
-                    <Store className="w-5 h-5 text-amber-600 mr-2" />
-                    <span className="font-medium">Restaurant Owners</span>
-                  </div>
-                  <span className="text-sm text-gray-500">{vendors.length}</span>
-                </div>
-                <div className="flex space-x-2">
-                  <button className="text-xs bg-amber-100 text-amber-600 px-2 py-1 rounded">Manage Access</button>
-                  <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">Permissions</button>
-                </div>
-              </div> */}
             </div>
           </div>
 
           {/* Vendor Management */}
           <div className="lg:col-span-1 bg-white rounded-xl shadow-sm p-6">
-            {/* <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Vendor Management</h2>
-              <Link to="/admin/vendors" className="text-sm text-blue-600 hover:text-blue-800">
-                View all
-              </Link>
-            </div> */}
+
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
@@ -561,30 +511,11 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center">
-                    <ShoppingBag className="w-5 h-5 text-emerald-600 mr-2" />
-                    <span className="font-medium">Products & Orders</span>
-                  </div>
-                </div>
-                <div className="flex space-x-2">
-                  <button className="text-xs bg-emerald-100 text-emerald-600 px-2 py-1 rounded">View Products</button>
-                  <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">View Orders</button>
-                  <button className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded">Categories</button>
-                </div>
-              </div> */}
             </div>
           </div>
 
-          {/* Delivery Management */}
           <div className="lg:col-span-1 bg-white rounded-xl shadow-sm p-6">
-            {/* <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Delivery Management</h2>
-              <Link to="/admin/delivery" className="text-sm text-blue-600 hover:text-blue-800">
-                View all
-              </Link>
-            </div> */}
+            
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
@@ -601,33 +532,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center">
-                    <Truck className="w-5 h-5 text-blue-600 mr-2" />
-                    <span className="font-medium">Assign Delivery</span>
-                  </div>
-                </div>
-                <div className="flex space-x-2">
-                  <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">Manual Assign</button>
-                  <button className="text-xs bg-emerald-100 text-emerald-600 px-2 py-1 rounded">Auto Assign</button>
-                </div>
-              </div> */}
-
-              {/* <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center">
-                    <User className="w-5 h-5 text-amber-600 mr-2" />
-                    <span className="font-medium">Delivery Agents</span>
-                  </div>
-                  <span className="text-sm text-gray-500">{deliveryAgents.length}</span>
-                </div>
-                <div className="flex space-x-2">
-                  <button className="text-xs bg-amber-100 text-amber-600 px-2 py-1 rounded">View Profiles</button>
-                  <button className="text-xs bg-emerald-100 text-emerald-600 px-2 py-1 rounded">Approve</button>
-                  <button className="text-xs bg-rose-100 text-rose-600 px-2 py-1 rounded">Reject</button>
-                </div>
-              </div> */}
             </div>
           </div>
         </div>
@@ -701,3 +605,4 @@ export default function AdminDashboard() {
     </div>
   );
 } 
+
